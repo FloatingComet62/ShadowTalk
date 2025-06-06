@@ -48,11 +48,11 @@ function iterateEvents(
         data,
         {
           reply: (data) => {
-            eventLogger.info(`Reply data: ${JSON.stringify(data)}`);
+            eventLogger.info('Reply data:', data);
             socket.emit(event_name + '.reply', JSON.stringify(data));
           },
           error: (data) => {
-            eventLogger.warn(`Error data: ${JSON.stringify(data)}`);
+            eventLogger.warn('Error data:', data);
             socket.emit(event_name + '.error', JSON.stringify(data));
           }
         }
@@ -62,7 +62,7 @@ function iterateEvents(
 }
 
 io.on('connection', (socket) => {
-  globalLogger.info(`New client connected: ${socket.id}`);
+  globalLogger.info('New client connected:', socket.id);
   const logger = globalLogger.addWorkspace(socket.id);
   auth[socket.id] = AuthenticationType.None;
 
@@ -73,7 +73,7 @@ io.on('connection', (socket) => {
   });
 
   iterateEvents(socket, logger, async (eventLogger, event, data, emit) => {
-    eventLogger.info(JSON.stringify(data));
+    eventLogger.info(data);
     if (!auth[socket.id] || !event.allowedAuthentication.includes(auth[socket.id])) {
       return emit.error({ message: 'Unauthorized' });
     }
@@ -87,12 +87,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    logger.info(`Client disconnected: ${socket.id}`);
+    logger.info('Client disconnected:', socket.id);
     delete auth[socket.id];
   });
 });
 
 server.listen(process.env.PORT, () => {
-  globalLogger.info(`Listening on ${process.env.PORT}`);
+  globalLogger.info('Listening on', process.env.PORT);
 });
-server.on('error', (err) => globalLogger.error(`Server error: ${err.message}`));
+server.on('error', (err) => globalLogger.error('Server error:', err.message));

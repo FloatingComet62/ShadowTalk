@@ -7,18 +7,18 @@ type Token = {
 }
 
 function createTokenTable(connection: Connection, logger: Log): void {
-  logger.info("Creating user table");
+  logger.info('Creating user table');
   connection.createTable("token");
 }
 
 function createToken(connection: Connection, logger: Log, token: Omit<Token, 'id'>): void {
-  logger.info(`Creating token: ${JSON.stringify(token)}`);
+  logger.info('Creating token:', token);
   const id = crypto.randomUUID();
   connection.setInTable("token", id, token);
 }
 
 function getToken(connection: Connection, logger: Log, id: string): Token | null {
-  logger.info(`Getting token with id: ${id}`);
+  logger.info('Getting token with id:', id);
   const data = connection.getFromTable("token", id);
   if (!data) {
     return null;
@@ -30,12 +30,12 @@ function getToken(connection: Connection, logger: Log, id: string): Token | null
 }
 
 function updateToken(connection: Connection, logger: Log, id: string, token: Partial<Omit<Token, 'id'>>): void {
-  logger.info(`Updating token with id: ${id}, data: ${JSON.stringify(token)}`);
+  logger.info('Updating token with id:', id, 'data:', token);
   connection.updateInTable("token", id, token);
 }
 
 function deleteToken(connection: Connection, logger: Log, id: string): void {
-  logger.info(`Deleting token with id: ${id}`);
+  logger.info('Deleting token with id:', id);
   connection.deleteFromTable("token", id);
 }
 

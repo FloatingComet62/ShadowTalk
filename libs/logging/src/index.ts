@@ -18,25 +18,25 @@ export class Log {
     return new Log(this.log_level, [...this.workspace, workspace]);
   }
 
-  info(message: string): void {
+  info(...message: any[]): void {
     if (this.log_level > LogLevel.INFO) {
       return;
     }
-    console.log(`[INFO] ${this.workspace.join('/')}: ${message}`);
+    console.log(`[INFO] ${this.workspace.join('/')}: ${message.map(m => JSON.stringify(m)).join(' ').replace(/"/g, '')}`);
   }
 
-  warn(message: string): void {
+  warn(...message: any[]): void {
     if (this.log_level > LogLevel.WARN) {
       return;
     }
-    console.warn(`[WARN] ${this.workspace.join('/')}: ${message}`);
+    console.warn(`[WARN] ${this.workspace.join('/')}: ${message.map(m => JSON.stringify(m)).join(' ').replace(/"/g, ' ')}`);
   }
 
-  error(message: string): void {
+  error(...message: any[]): void {
     if (this.log_level > LogLevel.ERROR) {
       return;
     }
-    console.error(`[ERROR] ${this.workspace.join('/')}: ${message}`);
+    console.error(`[ERROR] ${this.workspace.join('/')}: ${message.map(m => JSON.stringify(m)).join(' ').replace(/"/g, ' ')}`);
   }
 }
 

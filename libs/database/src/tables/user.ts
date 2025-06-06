@@ -8,18 +8,18 @@ type User = {
 }
 
 function createUserTable(connection: Connection, logger: Log): void {
-  logger.info("Creating user table");
+  logger.info('Creating user table');
   connection.createTable("user");
 }
 
 function createUser(connection: Connection, logger: Log, user: Omit<User, 'id'>): void {
-  logger.info(`Creating user: ${JSON.stringify(user)}`);
+  logger.info('Creating user:', user);
   const id = crypto.randomUUID();
   connection.setInTable("user", id, user);
 }
 
 function getUser(connection: Connection, logger: Log, id: string): User | null {
-  logger.info(`Getting user with id: ${id}`);
+  logger.info('Getting user with id:', id);
   const data = connection.getFromTable("user", id);
   if (!data) {
     return null;
@@ -31,12 +31,12 @@ function getUser(connection: Connection, logger: Log, id: string): User | null {
 }
 
 function updateUser(connection: Connection, logger: Log, id: string, user: Partial<Omit<User, 'id'>>): void {
-  logger.info(`Updating user with id: ${id}, data: ${JSON.stringify(user)}`);
+  logger.info('Updating user with id:', id, 'data:', user);
   connection.updateInTable("user", id, user);
 }
 
 function deleteUser(connection: Connection, logger: Log, id: string): void {
-  logger.info(`Deleting user with id: ${id}`);
+  logger.info('Deleting user with id:', id);
   connection.deleteFromTable("user", id);
 }
 
