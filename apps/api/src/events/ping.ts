@@ -1,19 +1,21 @@
 import { z } from "zod/v4";
 import { AuthenticationType, Event } from "../types";
 
+const zodSchema = z.object({
+  hello: z.string().refine((val) => val === "world", {
+    message: "Hello must be 'world'",
+  })
+});
+
 export default {
   allowedAuthentication: [
     AuthenticationType.None,
     AuthenticationType.User,
     AuthenticationType.Admin
   ],
-  zodSchema: z.object({
-    hello: z.string().refine((val) => val === "world", {
-      message: "Hello must be 'world'",
-    })
-  }),
-  handler: async (socket, data) => {
-    socket.emit('pong', {
+  zodSchema,
+  handler: async (data: z.infer<typeof zodSchema>, emit) => {
+    emit.reply({
       message: `Pong! Received: ${data.hello}`
     })
   }

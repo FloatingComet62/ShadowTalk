@@ -5,11 +5,11 @@ import { Logger } from '@shadowtalk/logging';
 import path from 'path';
 import { readdirSync } from 'fs';
 import { AuthenticationType, Event } from './types';
-import { z } from 'zod/v4';
+import { Log } from '@shadowtalk/logging';
 
 const app = express();
 const server = createServer(app);
-const logger = Logger(['api']);
+const globalLogger = Logger(['api']);
 const io = new Server(server, {
   cors: {
     origin: '*', // Allow all origins for simplicity; adjust as needed
@@ -21,42 +21,74 @@ const auth = {};
 
 // read events from the 'events' directory
 const folderPath = path.join(__dirname, 'events');
-function iterateEvents(socket: Socket, handler: (event: Event, event_name: string, data: any) => void) {
+function iterateEvents(
+  socket: Socket,
+  socketLogger: Log,
+  handler: (
+    eventLogger: Log,
+    event: Event,
+    event_name: string,
+    data,
+    emit: {
+      reply: (data) => void,
+      error: (data) => void
+    },
+  ) => void
+) {
   const commandFiles = readdirSync(folderPath).filter(JS_FILE);
   for (const file of commandFiles) {
     const filePath = path.join(folderPath, file);
     const event = require(filePath).default as Event;
     const event_name = file.replace('.ts', '');
-    socket.on(event_name, (data) => handler(event, event_name, data));
+    const eventLogger = socketLogger.addWorkspace(event_name);
+
+    socket.on(
+      event_name,
+      (data) => handler(
+        eventLogger,
+        event,
+        event_name,
+        data,
+        {
+          reply: (data) => {
+            eventLogger.info(`Reply data: ${JSON.stringify(data)}`);
+            socket.emit(event_name + '.reply', data)
+          },
+          error: (data) => {
+            eventLogger.warn(`Error data: ${JSON.stringify(data)}`);
+            socket.emit(event_name + '.error', data)
+          }
+        }
+      )
+    );
   }
 }
 
 io.on('connection', (socket) => {
-  logger.info(`New client connected: ${socket.id}`);
+  globalLogger.info(`New client connected: ${socket.id}`);
+  const logger = globalLogger.addWorkspace(socket.id);
   auth[socket.id] = AuthenticationType.None;
 
   socket.on('authenticate', (data) => {
-    logger.info(`Authentication request from ${socket.id}: ${data}`);
+    logger.addWorkspace('authenticate').info(`${data}`);
     auth[socket.id] = AuthenticationType.User; // Simulate authentication
-    socket.emit('authenticated', { success: true, message: 'Authenticated successfully' });
+    socket.emit('authenticate.reply', { success: true, message: 'Authenticated successfully' });
   });
 
-  iterateEvents(socket, async (event, event_name, data) => {
-    logger.info(`Event received: ${event_name} from ${socket.id}`);
+  iterateEvents(socket, logger, async (eventLogger, event, event_name, data, emit) => {
+    eventLogger.info(`${data}`);
     if (!auth[socket.id] || !event.allowedAuthentication.includes(auth[socket.id])) {
-      logger.warn(`Unauthorized access attempt by ${socket.id} for event ${event_name}`);
-      socket.emit('error', { message: 'Unauthorized' });
-      return;
+      eventLogger.warn(`Unauthorized`);
+      return emit.error({ message: 'Unauthorized' });
     }
 
-    const result = event.zodSchema.safeParse(data)
+    const result = event.zodSchema.safeParse(data);
     if (!result.success) {
-      logger.error(`Error handling event ${event_name}: ${result.error.message}`);
-      socket.emit('error', { message: result.error.message });
-      return;
+      eventLogger.error(`Validation error: ${result.error.message}`);
+      return emit.error({ message: result.error.message });
     }
 
-    await event.handler(socket, result.data);
+    await event.handler(result.data, emit);
   });
 
   socket.on('disconnect', () => {
@@ -66,6 +98,6 @@ io.on('connection', (socket) => {
 });
 
 server.listen(process.env.PORT, () => {
-  logger.info(`Listening on ${process.env.PORT}`);
+  globalLogger.info(`Listening on ${process.env.PORT}`);
 });
-server.on('error', logger.error);
+server.on('error', (err) => globalLogger.error(`Server error: ${err.message}`));
