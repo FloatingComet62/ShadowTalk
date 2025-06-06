@@ -34,11 +34,10 @@ function iterateEvents(
     },
   ) => void
 ) {
-  const commandFiles = readdirSync(folderPath).filter(JS_FILE);
-  for (const file of commandFiles) {
-    const filePath = path.join(folderPath, file);
-    const event = require(filePath).default as Event;
-    const event_name = file.replace('.ts', '');
+  const context = require.context('./events', false, /\.ts$/);
+  context.keys().forEach((key) => {
+    const event = context(key) as Event;
+    const event_name = key.replace('./', '').replace('.ts', '');
     const eventLogger = socketLogger.addWorkspace(event_name);
 
     socket.on(
@@ -50,16 +49,16 @@ function iterateEvents(
         {
           reply: (data) => {
             eventLogger.info(`Reply data: ${JSON.stringify(data)}`);
-            socket.emit(event_name + '.reply', data)
+            socket.emit(event_name + '.reply', JSON.stringify(data));
           },
           error: (data) => {
             eventLogger.warn(`Error data: ${JSON.stringify(data)}`);
-            socket.emit(event_name + '.error', data)
+            socket.emit(event_name + '.error', JSON.stringify(data));
           }
         }
       )
     );
-  }
+  });
 }
 
 io.on('connection', (socket) => {
@@ -68,21 +67,19 @@ io.on('connection', (socket) => {
   auth[socket.id] = AuthenticationType.None;
 
   socket.on('authenticate', (data) => {
-    logger.addWorkspace('authenticate').info(`${data}`);
+    logger.addWorkspace('authenticate').info(JSON.stringify(data));
     auth[socket.id] = AuthenticationType.User; // Simulate authentication
     socket.emit('authenticate.reply', { success: true, message: 'Authenticated successfully' });
   });
 
   iterateEvents(socket, logger, async (eventLogger, event, data, emit) => {
-    eventLogger.info(`${data}`);
+    eventLogger.info(JSON.stringify(data));
     if (!auth[socket.id] || !event.allowedAuthentication.includes(auth[socket.id])) {
-      eventLogger.warn(`Unauthorized`);
       return emit.error({ message: 'Unauthorized' });
     }
 
     const result = event.zodSchema.safeParse(data);
     if (!result.success) {
-      eventLogger.error(`Validation error: ${result.error.message}`);
       return emit.error({ message: result.error.message });
     }
 

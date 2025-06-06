@@ -8,6 +8,9 @@
     }
   ],
   "compilerOptions": {
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": [
+      "express",
+    ]
   }
 }

@@ -17,7 +17,10 @@
     "paths": {
       "@shadowtalk/database": ["libs/database/src/index.ts"],
       "@shadowtalk/logging": ["libs/logging/src/index.ts"]
-    }
+    },
+    "types": [
+      "node",
+    ]
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": ["node_modules", "tmp"],
 }

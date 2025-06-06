@@ -99,13 +99,6 @@ module.exports = require("path");
 
 /***/ }),
 /* 7 */
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("fs");
-
-/***/ }),
-/* 8 */
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -121,18 +114,69 @@ var AuthenticationType;
 
 
 /***/ }),
+/* 8 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var map = {
+	"./ping.ts": 9
+};
+
+
+function webpackContext(req) {
+	var id = webpackContextResolve(req);
+	return __webpack_require__(id);
+}
+function webpackContextResolve(req) {
+	if(!__webpack_require__.o(map, req)) {
+		var e = new Error("Cannot find module '" + req + "'");
+		e.code = 'MODULE_NOT_FOUND';
+		throw e;
+	}
+	return map[req];
+}
+webpackContext.keys = function webpackContextKeys() {
+	return Object.keys(map);
+};
+webpackContext.resolve = webpackContextResolve;
+module.exports = webpackContext;
+webpackContext.id = 8;
+
+/***/ }),
 /* 9 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const tslib_1 = __webpack_require__(1);
+const v4_1 = __webpack_require__(10);
+const types_1 = __webpack_require__(7);
+const zodSchema = v4_1.z.object({
+    hello: v4_1.z.string().refine((val) => val === "world", {
+        message: "Hello must be 'world'",
+    })
+});
+exports["default"] = {
+    allowedAuthentication: [
+        types_1.AuthenticationType.None,
+        types_1.AuthenticationType.User,
+        types_1.AuthenticationType.Admin
+    ],
+    zodSchema,
+    handler: (data, emit) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+        emit.reply({
+            message: `Pong! Received: ${data.hello}`
+        });
+    })
+};
+
+
+/***/ }),
+/* 10 */
 /***/ ((module) => {
 
-function webpackEmptyContext(req) {
-	var e = new Error("Cannot find module '" + req + "'");
-	e.code = 'MODULE_NOT_FOUND';
-	throw e;
-}
-webpackEmptyContext.keys = () => ([]);
-webpackEmptyContext.resolve = webpackEmptyContext;
-webpackEmptyContext.id = 9;
-module.exports = webpackEmptyContext;
+"use strict";
+module.exports = require("zod/v4");
 
 /***/ })
 /******/ 	]);
@@ -181,8 +225,7 @@ const http_1 = __webpack_require__(3);
 const socket_io_1 = __webpack_require__(4);
 const logging_1 = __webpack_require__(5);
 const path_1 = tslib_1.__importDefault(__webpack_require__(6));
-const fs_1 = __webpack_require__(7);
-const types_1 = __webpack_require__(8);
+const types_1 = __webpack_require__(7);
 const app = (0, express_1.default)();
 const server = (0, http_1.createServer)(app);
 const globalLogger = (0, logging_1.Logger)(['api']);
@@ -196,42 +239,39 @@ const auth = {};
 // read events from the 'events' directory
 const folderPath = path_1.default.join(__dirname, 'events');
 function iterateEvents(socket, socketLogger, handler) {
-    const commandFiles = (0, fs_1.readdirSync)(folderPath).filter(JS_FILE);
-    for (const file of commandFiles) {
-        const filePath = path_1.default.join(folderPath, file);
-        const event = __webpack_require__(9)(filePath).default;
-        const event_name = file.replace('.ts', '');
+    const context = __webpack_require__(8);
+    context.keys().forEach((key) => {
+        const event = context(key);
+        const event_name = key.replace('./', '').replace('.ts', '');
         const eventLogger = socketLogger.addWorkspace(event_name);
         socket.on(event_name, (data) => handler(eventLogger, event, data, {
             reply: (data) => {
                 eventLogger.info(`Reply data: ${JSON.stringify(data)}`);
-                socket.emit(event_name + '.reply', data);
+                socket.emit(event_name + '.reply', JSON.stringify(data));
             },
             error: (data) => {
                 eventLogger.warn(`Error data: ${JSON.stringify(data)}`);
-                socket.emit(event_name + '.error', data);
+                socket.emit(event_name + '.error', JSON.stringify(data));
             }
         }));
-    }
+    });
 }
 io.on('connection', (socket) => {
     globalLogger.info(`New client connected: ${socket.id}`);
     const logger = globalLogger.addWorkspace(socket.id);
     auth[socket.id] = types_1.AuthenticationType.None;
     socket.on('authenticate', (data) => {
-        logger.addWorkspace('authenticate').info(`${data}`);
+        logger.addWorkspace('authenticate').info(JSON.stringify(data));
         auth[socket.id] = types_1.AuthenticationType.User; // Simulate authentication
         socket.emit('authenticate.reply', { success: true, message: 'Authenticated successfully' });
     });
     iterateEvents(socket, logger, (eventLogger, event, data, emit) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
-        eventLogger.info(`${data}`);
+        eventLogger.info(JSON.stringify(data));
         if (!auth[socket.id] || !event.allowedAuthentication.includes(auth[socket.id])) {
-            eventLogger.warn(`Unauthorized`);
             return emit.error({ message: 'Unauthorized' });
         }
         const result = event.zodSchema.safeParse(data);
         if (!result.success) {
-            eventLogger.error(`Validation error: ${result.error.message}`);
             return emit.error({ message: result.error.message });
         }
         yield event.handler(result.data, emit);
