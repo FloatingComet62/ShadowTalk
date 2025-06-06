@@ -1,34 +1,38 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ([
 /* 0 */,
 /* 1 */
 /***/ ((module) => {
 
+"use strict";
 module.exports = require("tslib");
 
 /***/ }),
 /* 2 */
 /***/ ((module) => {
 
+"use strict";
 module.exports = require("express");
 
 /***/ }),
 /* 3 */
 /***/ ((module) => {
 
+"use strict";
 module.exports = require("http");
 
 /***/ }),
 /* 4 */
 /***/ ((module) => {
 
+"use strict";
 module.exports = require("socket.io");
 
 /***/ }),
 /* 5 */
 /***/ ((__unused_webpack_module, exports) => {
 
+"use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Logger = exports.Log = void 0;
@@ -86,6 +90,50 @@ function noLogger(workspace) {
 exports.Logger = process.env.IS_DEV == "true" ? infoLogger : warnLogger;
 
 
+/***/ }),
+/* 6 */
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("path");
+
+/***/ }),
+/* 7 */
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs");
+
+/***/ }),
+/* 8 */
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AuthenticationType = void 0;
+var AuthenticationType;
+(function (AuthenticationType) {
+    AuthenticationType[AuthenticationType["None"] = 0] = "None";
+    AuthenticationType[AuthenticationType["User"] = 1] = "User";
+    AuthenticationType[AuthenticationType["Admin"] = 2] = "Admin";
+})(AuthenticationType || (exports.AuthenticationType = AuthenticationType = {}));
+
+
+/***/ }),
+/* 9 */
+/***/ ((module) => {
+
+function webpackEmptyContext(req) {
+	var e = new Error("Cannot find module '" + req + "'");
+	e.code = 'MODULE_NOT_FOUND';
+	throw e;
+}
+webpackEmptyContext.keys = () => ([]);
+webpackEmptyContext.resolve = webpackEmptyContext;
+webpackEmptyContext.id = 9;
+module.exports = webpackEmptyContext;
+
 /***/ })
 /******/ 	]);
 /************************************************************************/
@@ -114,9 +162,16 @@ exports.Logger = process.env.IS_DEV == "true" ? infoLogger : warnLogger;
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
-// This entry needs to be wrapped in an IIFE because it needs to be isolated against other modules in the chunk.
+// This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
 (() => {
+"use strict";
 var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
@@ -125,24 +180,71 @@ const express_1 = tslib_1.__importDefault(__webpack_require__(2));
 const http_1 = __webpack_require__(3);
 const socket_io_1 = __webpack_require__(4);
 const logging_1 = __webpack_require__(5);
+const path_1 = tslib_1.__importDefault(__webpack_require__(6));
+const fs_1 = __webpack_require__(7);
+const types_1 = __webpack_require__(8);
 const app = (0, express_1.default)();
 const server = (0, http_1.createServer)(app);
-const logger = (0, logging_1.Logger)(['api']);
+const globalLogger = (0, logging_1.Logger)(['api']);
 const io = new socket_io_1.Server(server, {
     cors: {
         origin: '*', // Allow all origins for simplicity; adjust as needed
     }
 });
+const JS_FILE = (file) => file.endsWith('.js') && !file.startsWith('index');
+const auth = {};
+// read events from the 'events' directory
+const folderPath = path_1.default.join(__dirname, 'events');
+function iterateEvents(socket, socketLogger, handler) {
+    const commandFiles = (0, fs_1.readdirSync)(folderPath).filter(JS_FILE);
+    for (const file of commandFiles) {
+        const filePath = path_1.default.join(folderPath, file);
+        const event = __webpack_require__(9)(filePath).default;
+        const event_name = file.replace('.ts', '');
+        const eventLogger = socketLogger.addWorkspace(event_name);
+        socket.on(event_name, (data) => handler(eventLogger, event, data, {
+            reply: (data) => {
+                eventLogger.info(`Reply data: ${JSON.stringify(data)}`);
+                socket.emit(event_name + '.reply', data);
+            },
+            error: (data) => {
+                eventLogger.warn(`Error data: ${JSON.stringify(data)}`);
+                socket.emit(event_name + '.error', data);
+            }
+        }));
+    }
+}
 io.on('connection', (socket) => {
-    logger.info(`New client connected: ${socket.id}`);
+    globalLogger.info(`New client connected: ${socket.id}`);
+    const logger = globalLogger.addWorkspace(socket.id);
+    auth[socket.id] = types_1.AuthenticationType.None;
+    socket.on('authenticate', (data) => {
+        logger.addWorkspace('authenticate').info(`${data}`);
+        auth[socket.id] = types_1.AuthenticationType.User; // Simulate authentication
+        socket.emit('authenticate.reply', { success: true, message: 'Authenticated successfully' });
+    });
+    iterateEvents(socket, logger, (eventLogger, event, data, emit) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+        eventLogger.info(`${data}`);
+        if (!auth[socket.id] || !event.allowedAuthentication.includes(auth[socket.id])) {
+            eventLogger.warn(`Unauthorized`);
+            return emit.error({ message: 'Unauthorized' });
+        }
+        const result = event.zodSchema.safeParse(data);
+        if (!result.success) {
+            eventLogger.error(`Validation error: ${result.error.message}`);
+            return emit.error({ message: result.error.message });
+        }
+        yield event.handler(result.data, emit);
+    }));
     socket.on('disconnect', () => {
         logger.info(`Client disconnected: ${socket.id}`);
+        delete auth[socket.id];
     });
 });
 server.listen(process.env.PORT, () => {
-    logger.info(`Listening on ${process.env.PORT}`);
+    globalLogger.info(`Listening on ${process.env.PORT}`);
 });
-server.on('error', console.error);
+server.on('error', (err) => globalLogger.error(`Server error: ${err.message}`));
 
 })();
 

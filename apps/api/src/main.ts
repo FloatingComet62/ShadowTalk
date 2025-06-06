@@ -27,7 +27,6 @@ function iterateEvents(
   handler: (
     eventLogger: Log,
     event: Event,
-    event_name: string,
     data,
     emit: {
       reply: (data) => void,
@@ -47,7 +46,6 @@ function iterateEvents(
       (data) => handler(
         eventLogger,
         event,
-        event_name,
         data,
         {
           reply: (data) => {
@@ -75,7 +73,7 @@ io.on('connection', (socket) => {
     socket.emit('authenticate.reply', { success: true, message: 'Authenticated successfully' });
   });
 
-  iterateEvents(socket, logger, async (eventLogger, event, event_name, data, emit) => {
+  iterateEvents(socket, logger, async (eventLogger, event, data, emit) => {
     eventLogger.info(`${data}`);
     if (!auth[socket.id] || !event.allowedAuthentication.includes(auth[socket.id])) {
       eventLogger.warn(`Unauthorized`);
