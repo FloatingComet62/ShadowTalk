@@ -7,6 +7,6 @@ const connection = new Connection();
 const logger = Logger(['database']);
 
 export default {
-    user: userBind(connection, logger.addWorkspace('user')),
-    token: tokenBind(connection, logger.addWorkspace('token')),
+  user: userBind(connection, logger.addWorkspace('user')),
+  token: tokenBind(connection, logger.addWorkspace('token')),
 }
