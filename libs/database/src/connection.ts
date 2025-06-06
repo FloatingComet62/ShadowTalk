@@ -59,14 +59,14 @@ export class Connection implements ConnectionInterface<Value> {
         this.data[tableName][key] = { ...existingData, ...value };
         this.save();
     }
-    searchInTable(tableName: string, query: (item: Value) => boolean): Value[] {
+    searchInTable(tableName: string, query: (key: string, item: Value) => boolean): Value[] {
         if (!this.data[tableName]) {
             return null;
         }
         const results: Value[] = [];
         for (const key in this.data[tableName]) {
             const item = this.data[tableName][key];
-            if (query(item)) {
+            if (query(key, item)) {
                 results.push(item);
             }
         }

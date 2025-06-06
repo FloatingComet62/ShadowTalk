@@ -1,3 +1,4 @@
+import { Log } from "@shadowtalk/logging";
 import { Connection } from "../connection";
 
 type User = {
@@ -6,16 +7,19 @@ type User = {
     password: string;
 }
 
-function createUserTable(connection: Connection): void {
+function createUserTable(connection: Connection, logger: Log): void {
+    logger.info("Creating user table");
     connection.createTable("user");
 }
 
-function createUser(connection: Connection, user: Omit<User, 'id'>): void {
+function createUser(connection: Connection, logger: Log, user: Omit<User, 'id'>): void {
+    logger.info(`Creating user: ${JSON.stringify(user)}`);
     const id = crypto.randomUUID();
     connection.setInTable("user", id, user);
 }
 
-function getUser(connection: Connection, id: string): User | null {
+function getUser(connection: Connection, logger: Log, id: string): User | null {
+    logger.info(`Getting user with id: ${id}`);
     const data = connection.getFromTable("user", id);
     if (!data) {
         return null;
@@ -26,27 +30,29 @@ function getUser(connection: Connection, id: string): User | null {
     } as User;
 }
 
-function updateUser(connection: Connection, id: string, user: Partial<Omit<User, 'id'>>): void {
+function updateUser(connection: Connection, logger: Log, id: string, user: Partial<Omit<User, 'id'>>): void {
+    logger.info(`Updating user with id: ${id}, data: ${JSON.stringify(user)}`);
     connection.updateInTable("user", id, user);
 }
 
-function deleteUser(connection: Connection, id: string): void {
+function deleteUser(connection: Connection, logger: Log, id: string): void {
+    logger.info(`Deleting user with id: ${id}`);
     connection.deleteFromTable("user", id);
 }
 
-export function bindConnection(connection: Connection): {
+export function bindConnection(connection: Connection, logger: Log): {
     createUserTable: () => void;
     createUser: (user: Omit<User, 'id'>) => void;
     getUser: (id: string) => User | null;
     updateUser: (id: string, user: Partial<Omit<User, 'id'>>) => void;
     deleteUser: (id: string) => void;
 } {
-    createUserTable(connection);
+    createUserTable(connection, logger);
     return {
-        createUserTable: createUserTable.bind(null, connection),
-        createUser: createUser.bind(null, connection),
-        getUser: getUser.bind(null, connection),
-        updateUser: updateUser.bind(null, connection),
-        deleteUser: deleteUser.bind(null, connection)
+        createUserTable: createUserTable.bind(null, connection, logger),
+        createUser: createUser.bind(null, connection, logger),
+        getUser: getUser.bind(null, connection, logger),
+        updateUser: updateUser.bind(null, connection, logger),
+        deleteUser: deleteUser.bind(null, connection, logger),
     };
 };
