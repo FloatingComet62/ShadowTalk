@@ -13,7 +13,7 @@ export default {
     AuthenticationType.User,
   ],
   zodSchema,
-  handler: async (data: z.infer<typeof zodSchema>, emit) => {
+  handler: async (data: z.infer<typeof zodSchema>, database, emit) => {
     emit.reply({
       message: `Pong! Received: ${data.hello}`
     })
