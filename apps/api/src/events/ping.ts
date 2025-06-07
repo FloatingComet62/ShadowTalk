@@ -11,7 +11,6 @@ export default {
   allowedAuthentication: [
     AuthenticationType.None,
     AuthenticationType.User,
-    AuthenticationType.Admin
   ],
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, emit) => {

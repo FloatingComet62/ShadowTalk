@@ -12,10 +12,11 @@ function createUserTable(connection: Connection, logger: Log): void {
   connection.createTable("user");
 }
 
-function createUser(connection: Connection, logger: Log, user: Omit<User, 'id'>): void {
+function createUser(connection: Connection, logger: Log, user: Omit<User, 'id'>): string {
   logger.info('Creating user:', user);
   const id = crypto.randomUUID();
   connection.setInTable("user", id, user);
+  return id;
 }
 
 function getUser(connection: Connection, logger: Log, id: string): User | null {
@@ -40,12 +41,17 @@ function deleteUser(connection: Connection, logger: Log, id: string): void {
   connection.deleteFromTable("user", id);
 }
 
+function searchUser(connection: Connection, logger: Log, query: (key: string, value: User) => boolean): User[] {
+  return connection.searchInTable("user", query);
+}
+
 export function bindConnection(connection: Connection, logger: Log): {
   createUserTable: () => void;
   createUser: (user: Omit<User, 'id'>) => void;
   getUser: (id: string) => User | null;
   updateUser: (id: string, user: Partial<Omit<User, 'id'>>) => void;
   deleteUser: (id: string) => void;
+  searchUser: (query: (key: string, value: User) => boolean) => User[];
 } {
   createUserTable(connection, logger);
   return {
@@ -54,5 +60,6 @@ export function bindConnection(connection: Connection, logger: Log): {
     getUser: getUser.bind(null, connection, logger),
     updateUser: updateUser.bind(null, connection, logger),
     deleteUser: deleteUser.bind(null, connection, logger),
+    searchUser: searchUser.bind(null, connection, logger)
   };
 };

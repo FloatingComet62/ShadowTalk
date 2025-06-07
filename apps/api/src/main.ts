@@ -2,8 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@shadowtalk/logging';
-import path from 'path';
-import { readdirSync } from 'fs';
+import Database from '@shadowtalk/database';
 import { AuthenticationType, Event } from './types';
 import { Log } from '@shadowtalk/logging';
 
@@ -16,11 +15,9 @@ const io = new Server(server, {
   }
 });
 
-const JS_FILE = (file) => file.endsWith('.js') && !file.startsWith('index');
 const auth = {};
 
 // read events from the 'events' directory
-const folderPath = path.join(__dirname, 'events');
 function iterateEvents(
   socket: Socket,
   socketLogger: Log,
@@ -66,15 +63,9 @@ io.on('connection', (socket) => {
   const logger = globalLogger.addWorkspace(socket.id);
   auth[socket.id] = AuthenticationType.None;
 
-  socket.on('authenticate', (data) => {
-    logger.addWorkspace('authenticate').info(JSON.stringify(data));
-    auth[socket.id] = AuthenticationType.User; // Simulate authentication
-    socket.emit('authenticate.reply', { success: true, message: 'Authenticated successfully' });
-  });
-
   iterateEvents(socket, logger, async (eventLogger, event, data, emit) => {
     eventLogger.info(data);
-    if (!auth[socket.id] || !event.allowedAuthentication.includes(auth[socket.id])) {
+    if (!event.allowedAuthentication.includes(auth[socket.id] ?? AuthenticationType.None)) {
       return emit.error({ message: 'Unauthorized' });
     }
 
@@ -83,7 +74,7 @@ io.on('connection', (socket) => {
       return emit.error({ message: result.error.message });
     }
 
-    await event.handler(result.data, emit);
+    await event.handler(result.data, Database, emit);
   });
 
   socket.on('disconnect', () => {
@@ -96,3 +87,12 @@ server.listen(process.env.PORT, () => {
   globalLogger.info('Listening on', process.env.PORT);
 });
 server.on('error', (err) => globalLogger.error('Server error:', err.message));
+
+process.on('SIGINT', () => {
+  Database.connection.save();
+  globalLogger.info('Shutting down server...');
+  server.close(() => {
+    globalLogger.info('Server closed');
+    process.exit(0);
+  });
+});

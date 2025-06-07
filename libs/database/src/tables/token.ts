@@ -3,18 +3,19 @@ import { Connection } from "../connection";
 
 type Token = {
   id: string;
-  token_id: string;
+  user_id: string;
 }
 
 function createTokenTable(connection: Connection, logger: Log): void {
-  logger.info('Creating user table');
+  logger.info('Creating token table');
   connection.createTable("token");
 }
 
-function createToken(connection: Connection, logger: Log, token: Omit<Token, 'id'>): void {
+function createToken(connection: Connection, logger: Log, token: Omit<Token, 'id'>): string {
   logger.info('Creating token:', token);
   const id = crypto.randomUUID();
   connection.setInTable("token", id, token);
+  return id;
 }
 
 function getToken(connection: Connection, logger: Log, id: string): Token | null {

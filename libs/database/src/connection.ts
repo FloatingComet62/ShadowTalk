@@ -21,8 +21,12 @@ export class Connection implements ConnectionInterface<Value> {
     writeFileSync(process.env.FILE_DB, fileData, "utf-8");
   }
   load(): Data {
-    const fileData = readFileSync(process.env.FILE_DB, "utf-8");
-    return JSON.parse(fileData) as Data;
+    try {
+      const fileData = readFileSync(process.env.FILE_DB, "utf-8");
+      return JSON.parse(fileData) as Data;
+    } catch {
+      return {};
+    }
   }
   createTable(tableName: string): void {
     if (this.data[tableName]) {
@@ -59,15 +63,15 @@ export class Connection implements ConnectionInterface<Value> {
     this.data[tableName][key] = { ...existingData, ...value };
     this.save();
   }
-  searchInTable(tableName: string, query: (key: string, item: Value) => boolean): Value[] {
+  searchInTable<T>(tableName: string, query: (key: string, item: T) => boolean): T[] {
     if (!this.data[tableName]) {
       return null;
     }
-    const results: Value[] = [];
+    const results: T[] = [];
     for (const key in this.data[tableName]) {
       const item = this.data[tableName][key];
-      if (query(key, item)) {
-        results.push(item);
+      if (query(key, item as T)) {
+        results.push(item as T);
       }
     }
     return results;

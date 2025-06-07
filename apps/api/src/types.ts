@@ -1,9 +1,9 @@
 import { z } from "zod/v4";
+import Database from "@shadowtalk/database"
 
 export enum AuthenticationType {
   None,
   User,
-  Admin,
 }
 
 export interface Event {
@@ -11,6 +11,7 @@ export interface Event {
   zodSchema: z.ZodSchema,
   handler: (
     data,
+    database: typeof Database,
     emit: {
       reply: (data) => void,
       error: (data) => void
