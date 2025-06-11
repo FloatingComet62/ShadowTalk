@@ -1,16 +1,12 @@
 import { readFileSync, writeFileSync } from "fs";
-import { ConnectionInterface } from "./types";
+import { ConnectionInterface, Token, User } from "./types";
 
-type Value = {
-  [key: string]: string | number | boolean | null;
-}
 type Data = {
-  [key: string]: {
-    [key: string]: Value;
-  }
-}
+  user?: Record<string, User>;
+  token?: Record<string, Token>;
+};
 
-export class Connection implements ConnectionInterface<Value> {
+export class Connection implements ConnectionInterface {
   data: Data;
 
   constructor() {
@@ -28,52 +24,80 @@ export class Connection implements ConnectionInterface<Value> {
       return {};
     }
   }
-  createTable(tableName: string): void {
-    if (this.data[tableName]) {
-      return;
+
+  createTokenTable(): void {
+    if (!this.data.token) {
+      this.data.token = {};
     }
-    this.data[tableName] = {};
-    this.save();
   }
-  getFromTable(tableName: string, key: string): Value {
-    if (!this.data[tableName]) {
+  getToken(id: string): Token | null {
+    if (!this.data.token || !this.data.token[id]) {
       return null;
     }
-    return this.data[tableName][key] || null;
+    return this.data.token[id] as Token;
   }
-  setInTable(tableName: string, key: string, value: Value): void {
-    if (!this.data[tableName]) {
-      this.createTable(tableName);
+  createToken(user_id: string): string {
+    if (!this.data.token) {
+      this.data.token = {};
     }
-    this.data[tableName][key] = value;
+    const id = crypto.randomUUID();
+    this.data.token[id] = {
+      id: id,
+      user_id: user_id,
+    };
     this.save();
+    return id;
   }
-  deleteFromTable(tableName: string, key: string): void {
-    if (!this.data[tableName] || !this.data[tableName][key]) {
-      return;
+  deleteToken(id: string): void {
+    if (this.data.token && this.data.token[id]) {
+      delete this.data.token[id];
+      this.save();
     }
-    delete this.data[tableName][key];
-    this.save();
   }
-  updateInTable(tableName: string, key: string, value: Partial<Value>): void {
-    if (!this.data[tableName] || !this.data[tableName][key]) {
-      return;
+
+  createUserTable(): void {
+    if (!this.data.user) {
+      this.data.user = {};
     }
-    const existingData = this.data[tableName][key];
-    this.data[tableName][key] = { ...existingData, ...value };
-    this.save();
   }
-  searchInTable<T>(tableName: string, query: (key: string, item: T) => boolean): T[] {
-    if (!this.data[tableName]) {
+  createUser(user: Omit<User, 'id'>): string {
+    if (!this.data.user) {
+      this.data.user = {};
+    }
+    const id = crypto.randomUUID();
+    this.data.user[id] = {
+      id: id,
+      ...user
+    };
+    this.save();
+    return id;
+  }
+  getUser(id: string): User | null {
+    if (!this.data.user || !this.data.user[id]) {
       return null;
     }
-    const results: T[] = [];
-    for (const key in this.data[tableName]) {
-      const item = this.data[tableName][key];
-      if (query(key, item as T)) {
-        results.push(item as T);
+    return this.data.user[id] as User;
+  }
+  doesUserExist(name: string): boolean {
+    if (!this.data.user) {
+      return false;
+    }
+    for (const user of Object.values(this.data.user)) {
+      if (user.name === name) {
+        return true;
       }
     }
-    return results;
+    return false;
+  }
+  validateUserPassword(name: string, password: string): User | null {
+    if (!this.data.user) {
+      return;
+    }
+    for (const user of Object.values(this.data.user)) {
+      if (user.name === name) {
+        return user.password === password ? user : null;
+      }
+    }
+    return;
   }
 }

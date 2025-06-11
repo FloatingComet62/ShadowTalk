@@ -17,57 +17,58 @@ export default {
   handler: async (data: z.infer<typeof zodSchema>, database, emit) => {
     switch (data.type) {
       case "login": {
-        login.call({ data, database, emit });
+        login([data, database, emit]);
         break;
       }
       case "register": {
-        register.call({ data, database, emit });
+        register([data, database, emit]);
         break;
       }
       case "token": {
-        token.call({ data, database, emit });
+        token([data, database, emit]);
         break;
       }
       case "logout": {
-        logout.call({ data, database, emit });
+        logout([data, database, emit]);
         break;
       }
     }
   }
 } as Event;
 
-function login() {
-  const user = this.database.user.searchUser((_, user) =>
-    user.name === this.data.name && user.password === this.data.password
-  )[0];
+function login([data, database, emit]: Parameters<Event["handler"]>) {
+  const user = database.validateUserPassword(data.name, data.password);
   if (!user) {
-    return this.emit.error({ message: "Invalid username or password" });
+    return emit.error({ message: "Invalid username or password" });
   }
-  const token = this.database.token.createToken({ user_id: user.id });
-  this.emit.reply({ token, user: { id: user.id, name: user.name } });
+  const token = database.getToken(user.id);
+  emit.reply({ token, user: { id: user.id, name: user.name } });
 }
-function register() {
-  const existing_user = this.database.user.searchUser((_, user) => user.name === this.data.name)
-  if (existing_user.length > 0) {
-    return this.emit.error({ message: "Username taken" });
+function register([data, database, emit]: Parameters<Event["handler"]>) {
+  const existing_user = database.doesUserExist(data.name);
+  if (existing_user) {
+    return emit.error({ message: "Username taken" });
   }
+  const userId = database.createUser({ name: data.name, password: data.password });
+  const token = database.createToken(userId);
+  return emit.reply({ token, user: { id: userId, name: data.name } });
 }
-function token() {
-  const token = this.database.token.getToken(this.data.token);
+function token([data, database, emit]: Parameters<Event["handler"]>) {
+  const token = database.getToken(data.token);
   if (!token) {
-    return this.emit.error({ message: "Invalid token" });
+    return emit.error({ message: "Invalid token" });
   }
-  const user = this.database.user.getUser(token.user_id);
+  const user = database.getUser(token.user_id);
   if (!user) {
-    return this.emit.error({ message: "User not found" });
+    return emit.error({ message: "Invalid Token" });
   }
-  this.emit.reply({ token: this.data.token, user: { id: user.id, name: user.name } });
+  emit.reply({ token: data.token, user: { id: user.id, name: user.name } });
 }
-function logout() {
-  const token = this.database.token.getToken(this.data.token);
+function logout([data, database, emit]: Parameters<Event["handler"]>) {
+  const token = database.getToken(data.token);
   if (!token) {
-    return this.emit.error({ message: "Invalid token" });
+    return emit.error({ message: "Invalid token" });
   }
-  this.database.token.deleteToken(this.data.token);
-  this.emit.reply({ message: "Logged out successfully" });
+  database.deleteToken(data.token);
+  emit.reply({ message: "Logged out successfully" });
 }

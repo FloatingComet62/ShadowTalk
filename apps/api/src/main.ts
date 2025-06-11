@@ -6,6 +6,9 @@ import Database from '@shadowtalk/database';
 import { AuthenticationType, Event } from './types';
 import { Log } from '@shadowtalk/logging';
 
+Database.createUserTable();
+Database.createTokenTable();
+
 const app = express();
 const server = createServer(app);
 const globalLogger = Logger(['api']);
@@ -89,7 +92,6 @@ server.listen(process.env.PORT, () => {
 server.on('error', (err) => globalLogger.error('Server error:', err.message));
 
 process.on('SIGINT', () => {
-  Database.connection.save();
   globalLogger.info('Shutting down server...');
   server.close(() => {
     globalLogger.info('Server closed');

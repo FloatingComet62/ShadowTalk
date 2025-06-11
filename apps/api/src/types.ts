@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import Database from "@shadowtalk/database"
+import { Token, User, ConnectionInterface } from "@shadowtalk/database"
 
 export enum AuthenticationType {
   None,
@@ -11,7 +11,7 @@ export interface Event {
   zodSchema: z.ZodSchema,
   handler: (
     data,
-    database: typeof Database,
+    database: ConnectionInterface,
     emit: {
       reply: (data) => void,
       error: (data) => void
