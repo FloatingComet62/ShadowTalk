@@ -3,7 +3,7 @@ import { Logger } from '@shadowtalk/logging';
 import { ConnectionInterface, ConnectionInterfaceMethods } from './types';
 export { Token, User, ConnectionInterface, Channel, Message } from './types';
 
-const connection = new Connection();
+const connection = new Connection(false);
 const logger = Logger(['database']);
 
 // Create wrapper functions using a for loop

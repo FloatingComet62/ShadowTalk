@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NxWelcomeComponent } from './nx-welcome.component';
-import { SocketService } from '../socket.server';
-import { Subscription } from 'rxjs';
+import { EventInteracter, EventInteracterBuilder, SocketService } from '../socket.server';
+
+type PingEventInteractor = EventInteracter<{ hello: string }, { message: string }, { message: string }>;
 
 @Component({
   imports: [NxWelcomeComponent, RouterModule],
@@ -12,19 +13,22 @@ import { Subscription } from 'rxjs';
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'shadowtalk';
-  private messageSub?: Subscription;
+  private ping?: PingEventInteractor;
 
   constructor(private socketService: SocketService) {}
 
   ngOnInit() {
     this.socketService.initConnection();
-    this.messageSub = this.socketService.listen<string>('ping.reply').subscribe((msg) => {
-      console.log('New message:', msg);
-    });
-    this.socketService.emit('ping', { hello: 'world' });
+    this.ping = (new EventInteracterBuilder(this.socketService, 'ping') as EventInteracterBuilder<PingEventInteractor>)
+      .onMessage((data) => console.log('Ping received:', data))
+      .onError((error) => console.error('Ping error:', error))
+      .build();
+
+    this.ping.emit({ hello: 'world' })
   }
 
   ngOnDestroy() {
-    this.messageSub?.unsubscribe();
+    this.socketService.disconnect();
+    this.ping?.disconnect();
   }
 }

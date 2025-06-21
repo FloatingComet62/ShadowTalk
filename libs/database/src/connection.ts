@@ -11,13 +11,19 @@ type Data = {
 export class Connection implements ConnectionInterface {
   data: Data;
 
-  constructor() {
+  constructor(load_data = true) {
+    if (!load_data) {
+      this.data = {};
+      return;
+    }
     this.data = this.load();
   }
+
   async save(): Promise<void> {
     const fileData = JSON.stringify(this.data, null, 2);
     writeFileSync(process.env.FILE_DB, fileData, "utf-8");
   }
+
   load(): Data {
     try {
       const fileData = readFileSync(process.env.FILE_DB, "utf-8");
@@ -25,6 +31,10 @@ export class Connection implements ConnectionInterface {
     } catch {
       return {};
     }
+  }
+
+  async close(): Promise<void> {
+    this.save();
   }
 
   async createTokenTable(): Promise<void> {

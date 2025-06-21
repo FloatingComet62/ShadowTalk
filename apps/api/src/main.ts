@@ -43,9 +43,8 @@ export function convertNameToEvent(name: string): string {
 // read events from the 'events' directory
 const context = require.context('./events', true, /\.ts$/);
 const events = context.keys().map((key) => {
-  const event = context(key) as Event<unknown, unknown, unknown>;
+  const event = context(key).default as Event<unknown, unknown, unknown>;
   const event_name = convertNameToEvent(key);
-  console.log(key, event_name);
   const eventLogger = globalLogger.addWorkspace(event_name);
   return { event, event_name, eventLogger };
 });
@@ -91,7 +90,7 @@ io.on('connection', (socket) => {
 
     const result = event.zodSchema.safeParse(data);
     if (!result.success) {
-      return emit.error({ message: result.error.message });
+      return emit.error({ message: result.error.issues.map(issue => issue.message).join(', ') });
     }
 
     await event.handler(result.data, Database, generateOperations(socket, auth), emit);
@@ -110,6 +109,8 @@ server.on('error', (err) => globalLogger.error('Server error:', err.message));
 
 process.on('SIGINT', () => {
   globalLogger.info('Shutting down server...');
+  Database.close();
+  globalLogger.info('Database connection closed');
   server.close(() => {
     globalLogger.info('Server closed');
     process.exit(0);

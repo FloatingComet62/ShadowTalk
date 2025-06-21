@@ -28,6 +28,8 @@ export type Message = {
 }
 
 export interface ConnectionInterface {
+  close(): Promise<void>;
+
   createTokenTable(): Promise<void>;
   getToken(token: string): Promise<Token | null>;
   createToken(user_id: string): Promise<string>; // returns token
