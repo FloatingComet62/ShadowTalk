@@ -29,7 +29,7 @@ export default {
     if (!user) {
       return emit.error({ message: "Invalid Token" });
     }
-    operations.markSocketAsUser();
+    operations.markSocketAsUser(user.id);
     return emit.reply({ token: data.token, user: { id: user.id, name: user.name } });
   }
 } as CurrentEvent;

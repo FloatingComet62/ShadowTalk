@@ -10,6 +10,8 @@ import { assert } from './assert';
 
 Database.createUserTable();
 Database.createTokenTable();
+Database.createChannelTable();
+Database.createMessageTable();
 
 const app = express();
 const server = createServer(app);
@@ -53,10 +55,10 @@ function iterateEvents<T, R, E>(
   handler: (
     eventLogger: Log,
     event: Event<T, R, E>,
-    data,
+    data: T,
     emit: {
-      reply: (data) => void,
-      error: (data) => void
+      reply: (data: R) => void,
+      error: (data: E) => void
     },
   ) => void
 ) {

@@ -2,6 +2,7 @@ export type User = {
   id: string;
   name: string;
   password: string;
+  salt: string;
   pfp?: string;
 }
 
@@ -22,6 +23,7 @@ export type Message = {
   channel_id: string;
   sender_id: string;
   content: string;
+  read_by: string[]; // user ids
   timestamp: Date;
 }
 
@@ -48,11 +50,10 @@ export interface ConnectionInterface {
   createMessageTable(): void;
   createMessage(message: Omit<Message, 'id' | 'timestamp'>): string; // returns id
   getMessage(id: string): Message | null;
-  getMessagesByChannelId(channelId: string): Message[];
-  getMessagesByChannelIdFromTimestamp(
-    channelId: string,
-    timestamp: Date,
-  ): Message[];
+  // the pagination goes from bottom to top, so start_from_bottom = 0 means the most recent messages
+  getMessagesByChannelIdPagination(channelId: string, start_from_bottom: number, number_of_items: number): Message[];
+  getUnreadMessagesByUserIdAndChannelId(channelId: string, userId: string): Message[]; // returns unread messages for a user in a channel
+  markMessageAsRead(messageId: string, userId: string): void; // marks a message as read by a user
   deleteMessage(id: string): void;
   deleteMessagesByChannelId(channelId: string): void;
 }
@@ -62,11 +63,13 @@ export const ConnectionInterfaceMethods = [
   { name: 'getToken', args: ['token'] },
   { name: 'createToken', args: ['user_id'] },
   { name: 'deleteToken', args: ['token'] },
+
   { name: 'createUserTable', args: [] },
   { name: 'createUser', args: ['user'] },
   { name: 'getUser', args: ['id'] },
   { name: 'doesUserExist', args: ['name'] },
   { name: 'validateUserPassword', args: ['name', 'password'] },
+
   { name: 'createChannelTable', args: [] },
   { name: 'createChannel', args: ['channel'] },
   { name: 'getChannel', args: ['id'] },
@@ -74,11 +77,13 @@ export const ConnectionInterfaceMethods = [
   { name: 'addUserToChannel', args: ['channelId', 'userId'] },
   { name: 'removeUserFromChannel', args: ['channelId', 'userId'] },
   { name: 'deleteChannel', args: ['id'] },
+
   { name: 'createMessageTable', args: [] },
   { name: 'createMessage', args: ['message'] },
   { name: 'getMessage', args: ['id'] },
-  { name: 'getMessagesByChannelId', args: ['channelId'] },
-  { name: 'getMessagesByChannelIdFromTimestamp', args: ['channelId', 'timestamp'] },
+  { name: 'getMessagesByChannelIdPagination', args: ['channelId', 'start_from_bottom', 'number_of_items'] },
+  { name: 'getUnreadMessagesByUserIdAndChannelId', args: ['channelId', 'userId'] },
+  { name: 'markMessageAsRead', args: ['messageId', 'userId'] },
   { name: 'deleteMessage', args: ['id'] },
   { name: 'deleteMessagesByChannelId', args: ['channelId'] },
 ] as const;

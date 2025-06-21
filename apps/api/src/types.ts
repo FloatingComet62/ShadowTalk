@@ -1,14 +1,10 @@
 import { z } from "zod/v4";
 import { ConnectionInterface } from "@shadowtalk/database"
+import { Operations } from "./operations";
 
 export enum AuthenticationType {
   None,
   User,
-}
-
-export type Operations = {
-  markSocketAsUser: () => void;
-  markSocketAsNone: () => void;
 }
 
 export interface Event<T, R, E> {

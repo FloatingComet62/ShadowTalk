@@ -1,7 +1,7 @@
 import { Connection } from './connection';
 import { Logger } from '@shadowtalk/logging';
 import { ConnectionInterface, ConnectionInterfaceMethods } from './types';
-export { Token, User, ConnectionInterface } from './types';
+export { Token, User, ConnectionInterface, Channel, Message } from './types';
 
 const connection = new Connection();
 const logger = Logger(['database']);

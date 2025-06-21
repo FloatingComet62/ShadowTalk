@@ -206,36 +206,44 @@ export class Connection implements ConnectionInterface {
     return this.data.message[id] as Message;
   }
 
-  getMessagesByChannelId(channelId: string): Message[] {
-    if (!this.data.message) {
-      return [];
+  getMessagesByChannelIdPagination(channelId: string, start_from_bottom: number, number_of_items: number): Message[] {
+    if (!this.data.message || !this.data.channel || !this.data.channel[channelId]) {
+      return []; // No messages or channel does not exist
     }
-    const channel = this.getChannel(channelId);
-    if (!channel) {
-      return []; // Channel does not exist
-    }
-
-    return Object.values(this.data.message).filter(
+    const messages = Object.values(this.data.message).filter(
       (message) => message.channel_id === channelId,
     ) as Message[];
+    
+    // Sort messages by timestamp in descending order
+    messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    
+    // Paginate the results
+    return messages.slice(start_from_bottom, start_from_bottom + number_of_items);
+  }
+  
+  getUnreadMessagesByUserIdAndChannelId(channelId: string, userId: string): Message[] {
+    if (!this.data.message || !this.data.channel || !this.data.channel[channelId]) {
+      return []; // No messages or channel does not exist
+    }
+    const messages = Object.values(this.data.message).filter(
+      (message) => message.channel_id === channelId && !message.read_by?.includes(userId),
+    ) as Message[];
+    
+    // Sort messages by timestamp in descending order
+    messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    
+    return messages;
   }
 
-  getMessagesByChannelIdFromTimestamp(
-    channelId: string,
-    timestamp: Date,
-  ): Message[] {
-    if (!this.data.message) {
-      return [];
+  markMessageAsRead(messageId: string, userId: string): void {
+    if (!this.data.message || !this.data.message[messageId]) {
+      return; // Message does not exist
     }
-    const channel = this.getChannel(channelId);
-    if (!channel) {
-      return []; // Channel does not exist
+    const message = this.data.message[messageId] as Message;
+    if (!message.read_by.includes(userId)) {
+      message.read_by.push(userId);
+      this.save();
     }
-
-    return Object.values(this.data.message).filter(
-      (message) =>
-        message.channel_id === channelId && message.timestamp >= timestamp,
-    ) as Message[];
   }
 
   deleteMessage(id: string): void {
