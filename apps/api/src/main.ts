@@ -3,8 +3,10 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@shadowtalk/logging';
 import Database from '@shadowtalk/database';
-import { AuthenticationType, Event, generateOperations } from './types';
+import { AuthenticationType, Event } from './types';
+import { generateOperations } from './operations';
 import { Log } from '@shadowtalk/logging';
+import { assert } from './assert';
 
 Database.createUserTable();
 Database.createTokenTable();
@@ -20,11 +22,28 @@ const io = new Server(server, {
 
 const auth = {};
 
+// ./file.ts -> file
+// ./nested/file.ts -> nested.file
+// ./nested/another/file.ts -> nested.another.file
+// ./nested/index.ts -> nested
+export function convertNameToEvent(name: string): string {
+  assert(name != "./index.ts", "Invalid event name: ./index.ts, the resulting event name would be empty");
+
+  const parts = name.split('/');
+  const fileName = parts[parts.length - 1].replace('.ts', '');
+  const pathParts = parts.slice(1, -1).join('.');
+  if (fileName === 'index') {
+    return pathParts ? `${pathParts}` : '';
+  }
+  return pathParts ? `${pathParts}.${fileName}` : fileName;
+}
+
 // read events from the 'events' directory
-const context = require.context('./events', false, /\.ts$/);
+const context = require.context('./events', true, /\.ts$/);
 const events = context.keys().map((key) => {
   const event = context(key) as Event<unknown, unknown, unknown>;
-  const event_name = key.replace('./', '').replace('.ts', '');
+  const event_name = convertNameToEvent(key);
+  console.log(key, event_name);
   const eventLogger = globalLogger.addWorkspace(event_name);
   return { event, event_name, eventLogger };
 });

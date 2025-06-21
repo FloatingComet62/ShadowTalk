@@ -1,6 +1,5 @@
 import { z } from "zod/v4";
 import { ConnectionInterface } from "@shadowtalk/database"
-import { Socket } from "socket.io";
 
 export enum AuthenticationType {
   None,
@@ -24,28 +23,4 @@ export interface Event<T, R, E> {
       error: (data: E) => void
     }
   ) => Promise<void>;
-}
-
-export function generateOperations(
-  socket: Socket,
-  auth: Record<string, AuthenticationType>
-): Operations {
-  return {
-    markSocketAsUser: () => {
-      auth[socket.id] = AuthenticationType.User;
-    },
-    markSocketAsNone: () => {
-      auth[socket.id] = AuthenticationType.None;
-    },
-  };
-}
-
-export function assert(
-  condition: boolean,
-  message: string
-): asserts condition {
-  if (!condition) {
-    console.error(message);
-    process.exit(1);
-  }
 }
