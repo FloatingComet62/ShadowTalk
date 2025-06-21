@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../types";
+import { AuthenticationType, Event } from "../../event";
 
 const zodSchema = z.object({ name: z.string(), password: z.string() });
 
@@ -21,11 +21,11 @@ export default {
   ],
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
-    const user = database.validateUserPassword(data.name, data.password);
+    const user = await database.validateUserPassword(data.name, data.password);
     if (!user) {
       return emit.error({ message: "Invalid username or password" });
     }
-    const token = database.createToken(user.id);
+    const token = await database.createToken(user.id);
     operations.markSocketAsUser(user.id);
     return emit.reply({ token, user: { id: user.id, name: user.name } });
   }

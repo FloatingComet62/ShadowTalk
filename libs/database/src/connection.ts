@@ -14,7 +14,7 @@ export class Connection implements ConnectionInterface {
   constructor() {
     this.data = this.load();
   }
-  save(): void {
+  async save(): Promise<void> {
     const fileData = JSON.stringify(this.data, null, 2);
     writeFileSync(process.env.FILE_DB, fileData, "utf-8");
   }
@@ -27,21 +27,21 @@ export class Connection implements ConnectionInterface {
     }
   }
 
-  createTokenTable(): void {
+  async createTokenTable(): Promise<void> {
     if (!this.data.token) {
       this.data.token = {};
     }
   }
-  getToken(id: string): Token | null {
+  async getToken(id: string): Promise<Token | null> {
     if (!this.data.token) {
-      this.createTokenTable();
+      await this.createTokenTable();
     }
     if (!this.data.token[id]) {
       return null;
     }
     return this.data.token[id] as Token;
   }
-  createToken(user_id: string): string {
+  async createToken(user_id: string): Promise<string> {
     if (!this.data.token) {
       this.data.token = {};
     }
@@ -50,40 +50,40 @@ export class Connection implements ConnectionInterface {
       id: id,
       user_id: user_id,
     };
-    this.save();
+    await this.save();
     return id;
   }
-  deleteToken(id: string): void {
+  async deleteToken(id: string): Promise<void> {
     if (this.data.token && this.data.token[id]) {
       delete this.data.token[id];
-      this.save();
+      await this.save();
     }
   }
 
-  createUserTable(): void {
+  async createUserTable(): Promise<void> {
     if (!this.data.user) {
       this.data.user = {};
     }
   }
-  createUser(user: Omit<User, 'id'>): string {
+  async createUser(user: Omit<User, 'id'>): Promise<string> {
     if (!this.data.user) {
-      this.createUserTable();
+      await this.createUserTable();
     }
     const id = crypto.randomUUID();
     this.data.user[id] = {
       id: id,
       ...user
     };
-    this.save();
+    await this.save();
     return id;
   }
-  getUser(id: string): User | null {
+  async getUser(id: string): Promise<User | null> {
     if (!this.data.user || !this.data.user[id]) {
       return null;
     }
     return this.data.user[id] as User;
   }
-  doesUserExist(name: string): boolean {
+  async doesUserExist(name: string): Promise<boolean> {
     if (!this.data.user) {
       return false;
     }
@@ -94,25 +94,26 @@ export class Connection implements ConnectionInterface {
     }
     return false;
   }
-  validateUserPassword(name: string, password: string): User | null {
+  async validateUserPassword(name: string, password: string): Promise<User | null> {
     if (!this.data.user) {
-      return;
+      return null;
     }
     for (const user of Object.values(this.data.user)) {
       if (user.name === name) {
         return user.password === password ? user : null;
       }
     }
+    return null;
   }
 
-  createChannelTable(): void {
+  async createChannelTable(): Promise<void> {
     if (!this.data.channel) {
       this.data.channel = {};
     }
   }
-  createChannel(channel: Omit<Channel, 'id'>): string {
+  async createChannel(channel: Omit<Channel, 'id'>): Promise<string> {
     if (!this.data.channel) {
-      this.createChannelTable();
+      await this.createChannelTable();
     }
     const id = crypto.randomUUID();
     this.data.channel[id] = {
@@ -120,18 +121,18 @@ export class Connection implements ConnectionInterface {
       ...channel,
       members: channel.members || [],
     };
-    this.save();
+    await this.save();
     return id;
   }
 
-  getChannel(id: string): Channel | null {
+  async getChannel(id: string): Promise<Channel | null> {
     if (!this.data.channel || !this.data.channel[id]) {
       return null;
     }
     return this.data.channel[id] as Channel;
   }
 
-  getChannelsByUserId(userId: string): Channel[] {
+  async getChannelsByUserId(userId: string): Promise<Channel[]> {
     if (!this.data.channel) {
       return [];
     }
@@ -140,9 +141,9 @@ export class Connection implements ConnectionInterface {
     ) as Channel[];
   }
 
-  addUserToChannel(channelId: string, userId: string): boolean {
+  async addUserToChannel(channelId: string, userId: string): Promise<boolean> {
     if (!this.data.channel) {
-      this.createChannelTable();
+      await this.createChannelTable();
     }
     if (!this.data.channel[channelId]) {
       return false; // Channel does not exist
@@ -152,11 +153,11 @@ export class Connection implements ConnectionInterface {
       return false; // User already in channel
     }
     channel.members = [...channel.members, userId];
-    this.save();
+    await this.save();
     return true; // User added successfully
   }
 
-  removeUserFromChannel(channelId: string, userId: string): void {
+  async removeUserFromChannel(channelId: string, userId: string): Promise<void> {
     if (!this.data.channel || !this.data.channel[channelId]) {
       return; // Channel does not exist
     }
@@ -166,28 +167,28 @@ export class Connection implements ConnectionInterface {
     }
     channel.members = channel.members.filter((id) => id !== userId);
     if (channel.members.length === 0) {
-      this.deleteChannel(channelId);
+      await this.deleteChannel(channelId);
     }
-    this.save();
+    await this.save();
   }
 
-  deleteChannel(id: string): void {
+  async deleteChannel(id: string): Promise<void> {
     if (!this.data.channel || !this.data.channel[id]) {
       return; // Channel does not exist
     }
     delete this.data.channel[id];
-    this.save();
+    await this.save();
   }
 
-  createMessageTable(): void {
+  async createMessageTable(): Promise<void> {
     if (!this.data.message) {
       this.data.message = {};
     }
   }
 
-  createMessage(message: Omit<Message, 'id' | 'timestamp'>): string {
+  async createMessage(message: Omit<Message, 'id' | 'timestamp'>): Promise<string> {
     if (!this.data.message) {
-      this.createMessageTable();
+      await this.createMessageTable();
     }
     const id = crypto.randomUUID();
     this.data.message[id] = {
@@ -195,18 +196,18 @@ export class Connection implements ConnectionInterface {
       ...message,
       timestamp: new Date(),
     };
-    this.save();
+    await this.save();
     return id;
   }
 
-  getMessage(id: string): Message | null {
+  async getMessage(id: string): Promise<Message | null> {
     if (!this.data.message || !this.data.message[id]) {
       return null; // Message does not exist
     }
     return this.data.message[id] as Message;
   }
 
-  getMessagesByChannelIdPagination(channelId: string, start_from_bottom: number, number_of_items: number): Message[] {
+  async getMessagesByChannelIdPagination(channelId: string, start_from_bottom: number, number_of_items: number): Promise<Message[]> {
     if (!this.data.message || !this.data.channel || !this.data.channel[channelId]) {
       return []; // No messages or channel does not exist
     }
@@ -221,7 +222,7 @@ export class Connection implements ConnectionInterface {
     return messages.slice(start_from_bottom, start_from_bottom + number_of_items);
   }
   
-  getUnreadMessagesByUserIdAndChannelId(channelId: string, userId: string): Message[] {
+  async getUnreadMessagesByUserIdAndChannelId(channelId: string, userId: string): Promise<Message[]> {
     if (!this.data.message || !this.data.channel || !this.data.channel[channelId]) {
       return []; // No messages or channel does not exist
     }
@@ -235,26 +236,26 @@ export class Connection implements ConnectionInterface {
     return messages;
   }
 
-  markMessageAsRead(messageId: string, userId: string): void {
+  async markMessageAsRead(messageId: string, userId: string): Promise<void> {
     if (!this.data.message || !this.data.message[messageId]) {
       return; // Message does not exist
     }
     const message = this.data.message[messageId] as Message;
     if (!message.read_by.includes(userId)) {
       message.read_by.push(userId);
-      this.save();
+      await this.save();
     }
   }
 
-  deleteMessage(id: string): void {
+  async deleteMessage(id: string): Promise<void> {
     if (!this.data.message || !this.data.message[id]) {
       return; // Message does not exist
     }
     delete this.data.message[id];
-    this.save();
+    await this.save();
   }
 
-  deleteMessagesByChannelId(channelId: string): void {
+  async deleteMessagesByChannelId(channelId: string): Promise<void> {
     if (!this.data.message || !this.getChannel(channelId)) {
       return; // No messages to delete
     }
@@ -263,6 +264,6 @@ export class Connection implements ConnectionInterface {
         delete this.data.message[id];
       }
     }
-    this.save();
+    await this.save();
   }
 }

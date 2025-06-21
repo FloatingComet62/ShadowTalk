@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../types";
+import { AuthenticationType, Event } from "../../event";
 import { assert } from "../../assert";
 
 const zodSchema = z.object({
@@ -26,12 +26,12 @@ export default {
     const userId = operations.getUserId();
     assert(!!userId, "User ID must be defined");
 
-    const channel = database.getChannel(data.channel_id);
+    const channel = await database.getChannel(data.channel_id);
     if (!channel) {
       return emit.error({ message: "Channel not found" });
     }
 
-    database.createMessage({
+    await database.createMessage({
       channel_id: data.channel_id,
       content: data.message_content,
       sender_id: userId,

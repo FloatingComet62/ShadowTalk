@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../types";
+import { AuthenticationType, Event } from "../../event";
 import { assert } from "../../assert";
 import { Channel } from "@shadowtalk/database";
 
@@ -23,6 +23,6 @@ export default {
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
     const userId = operations.getUserId();
     assert(!!userId, "User ID must be defined");
-    return emit.reply({ channels: database.getChannelsByUserId(userId) });
+    return emit.reply({ channels: await database.getChannelsByUserId(userId) });
   }
 } as CurrentEvent;

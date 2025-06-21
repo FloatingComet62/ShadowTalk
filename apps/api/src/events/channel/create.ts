@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../types";
+import { AuthenticationType, Event } from "../../event";
 import { assert } from "../../assert";
 
 const zodSchema = z.object({
@@ -25,7 +25,7 @@ export default {
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
     const userId = operations.getUserId();
     assert(!!userId, "User ID must be defined");
-    return emit.reply({ channel_id: database.createChannel({
+    return emit.reply({ channel_id: await database.createChannel({
       name: data.name,
       members: [...data.members, userId], // Add the creator to the channel
     }) });

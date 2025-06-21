@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../types";
+import { AuthenticationType, Event } from "../../event";
 
 const zodSchema = z.object({ type: z.literal("token"), token: z.string() });
 
@@ -21,11 +21,11 @@ export default {
   ],
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
-    const token = database.getToken(data.token);
+    const token = await database.getToken(data.token);
     if (!token) {
       return emit.error({ message: "Invalid token" });
     }
-    const user = database.getUser(token.user_id);
+    const user = await database.getUser(token.user_id);
     if (!user) {
       return emit.error({ message: "Invalid Token" });
     }

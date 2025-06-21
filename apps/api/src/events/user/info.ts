@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../types";
+import { AuthenticationType, Event } from "../../event";
 import { User } from "@shadowtalk/database";
 import { assert } from "../../assert";
 
@@ -24,7 +24,7 @@ export default {
   ],
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
-    const user = database.getUser(data.user_id);
+    const user = await database.getUser(data.user_id);
     if (!user) {
       return emit.error({ message: "User not found" });
     }

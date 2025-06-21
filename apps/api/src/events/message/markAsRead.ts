@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../types";
+import { AuthenticationType, Event } from "../../event";
 import { assert } from "../../assert";
 
 const zodSchema = z.object({
@@ -24,7 +24,7 @@ export default {
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
     const userId = operations.getUserId();
     assert(!!userId, "User ID must be defined");
-    database.markMessageAsRead(data.message_id, userId);
+    await database.markMessageAsRead(data.message_id, userId);
     return emit.reply({ marked: true });
   }
 } as CurrentEvent;

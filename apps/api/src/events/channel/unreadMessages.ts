@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../types";
+import { AuthenticationType, Event } from "../../event";
 import { assert } from "../../assert";
 import { Message } from "@shadowtalk/database";
 
@@ -26,7 +26,7 @@ export default {
     const userId = operations.getUserId();
     assert(!!userId, "User ID must be defined");
     return emit.reply({
-      messages: database.getUnreadMessagesByUserIdAndChannelId(data.channel_id, userId)
+      messages: await database.getUnreadMessagesByUserIdAndChannelId(data.channel_id, userId)
     });
   }
 } as CurrentEvent;

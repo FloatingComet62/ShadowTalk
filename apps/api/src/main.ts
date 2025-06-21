@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@shadowtalk/logging';
 import Database from '@shadowtalk/database';
-import { AuthenticationType, Event } from './types';
+import { AuthenticationType, Event } from './event';
 import { generateOperations } from './operations';
 import { Log } from '@shadowtalk/logging';
 import { assert } from './assert';

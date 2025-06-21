@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { AuthenticationType } from "./types";
+import { AuthenticationType } from "./event";
 
 export type Operations = {
   markSocketAsUser: (user_id: string) => void;

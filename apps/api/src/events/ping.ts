@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../types";
+import { AuthenticationType, Event } from "../event";
 
 const zodSchema = z.object({
   hello: z.string().refine((val) => val === "world", {

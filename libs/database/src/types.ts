@@ -28,34 +28,34 @@ export type Message = {
 }
 
 export interface ConnectionInterface {
-  createTokenTable(): void;
-  getToken(token: string): Token | null;
-  createToken(user_id: string): string; // returns token
-  deleteToken(token: string): void;
+  createTokenTable(): Promise<void>;
+  getToken(token: string): Promise<Token | null>;
+  createToken(user_id: string): Promise<string>; // returns token
+  deleteToken(token: string): Promise<void>;
 
-  createUserTable(): void;
-  createUser(user: Omit<User, 'id'>): string; // returns id
-  getUser(id: string): User | null;
-  doesUserExist(name: string): boolean;
-  validateUserPassword(name: string, password: string): User | null;
+  createUserTable(): Promise<void>;
+  createUser(user: Omit<User, 'id'>): Promise<string>; // returns id
+  getUser(id: string): Promise<User | null>;
+  doesUserExist(name: string): Promise<boolean>;
+  validateUserPassword(name: string, password: string): Promise<User | null>;
 
-  createChannelTable(): void;
-  createChannel(channel: Omit<Channel, 'id'>): string; // returns id
-  getChannel(id: string): Channel | null;
-  getChannelsByUserId(userId: string): Channel[];
-  addUserToChannel(channelId: string, userId: string): boolean; // returns true if user was added
-  removeUserFromChannel(channelId: string, userId: string): void;
-  deleteChannel(id: string): void;
+  createChannelTable(): Promise<void>;
+  createChannel(channel: Omit<Channel, 'id'>): Promise<string>; // returns id
+  getChannel(id: string): Promise<Channel | null>;
+  getChannelsByUserId(userId: string): Promise<Channel[]>;
+  addUserToChannel(channelId: string, userId: string): Promise<boolean>; // returns true if user was added
+  removeUserFromChannel(channelId: string, userId: string): Promise<void>;
+  deleteChannel(id: string): Promise<void>;
 
-  createMessageTable(): void;
-  createMessage(message: Omit<Message, 'id' | 'timestamp'>): string; // returns id
-  getMessage(id: string): Message | null;
+  createMessageTable(): Promise<void>;
+  createMessage(message: Omit<Message, 'id' | 'timestamp'>): Promise<string>; // returns id
+  getMessage(id: string): Promise<Message | null>;
   // the pagination goes from bottom to top, so start_from_bottom = 0 means the most recent messages
-  getMessagesByChannelIdPagination(channelId: string, start_from_bottom: number, number_of_items: number): Message[];
-  getUnreadMessagesByUserIdAndChannelId(channelId: string, userId: string): Message[]; // returns unread messages for a user in a channel
-  markMessageAsRead(messageId: string, userId: string): void; // marks a message as read by a user
-  deleteMessage(id: string): void;
-  deleteMessagesByChannelId(channelId: string): void;
+  getMessagesByChannelIdPagination(channelId: string, start_from_bottom: number, number_of_items: number): Promise<Message[]>;
+  getUnreadMessagesByUserIdAndChannelId(channelId: string, userId: string): Promise<Message[]>; // returns unread messages for a user in a channel
+  markMessageAsRead(messageId: string, userId: string): Promise<void>; // marks a message as read by a user
+  deleteMessage(id: string): Promise<void>;
+  deleteMessagesByChannelId(channelId: string): Promise<void>;
 }
 
 export const ConnectionInterfaceMethods = [
