@@ -1,11 +1,12 @@
 import { Socket } from "socket.io";
 import { AuthenticationType } from "./event";
+import Keyv from "keyv";
 
 export type Operations = {
-  markSocketAsUser: (user_id: string) => void;
-  markSocketAsNone: () => void;
-  getUserId?: () => string | undefined;
-  broadcast: (message_content: string, channel_id: string, members: string[]) => void;
+  markSocketAsUser: (user_id: string) => Promise<void>;
+  markSocketAsNone: () => Promise<void>;
+  getUserId?: () => Promise<string | undefined>;
+  broadcast: (message_content: string, channel_id: string, members: string[]) => Promise<void>;
 }
 
 export type AuthData = {
@@ -17,30 +18,30 @@ export type AuthData = {
 
 export function generateOperations(
   socket: Socket,
-  auth: Record<string, AuthData>
+  auth: Keyv<AuthData>
 ): Operations {
   return {
-    markSocketAsUser: (user_id: string) => {
-      auth[socket.id] = {
+    markSocketAsUser: async (user_id: string) => {
+      await auth.set(socket.id, {
         type: AuthenticationType.User,
         userId: user_id,
-      }
+      });
     },
-    markSocketAsNone: () => {
-      auth[socket.id] = {
+    markSocketAsNone: async () => {
+      await auth.set(socket.id, {
         type: AuthenticationType.None,
-      }
+      });
     },
-    getUserId: () => {
-      const authData = auth[socket.id];
+    getUserId: async () => {
+      const authData = await auth.get(socket.id);
       if (!authData || authData.type === AuthenticationType.None) {
         return undefined;
       }
       return authData.userId;
     },
-    broadcast: (message_content: string, channel_id: string, members: string[]) => {
-      const activeSockets = Object.keys(auth).filter(socketId => {
-        const authData = auth[socketId];
+    broadcast: async (message_content: string, channel_id: string, members: string[]) => {
+      const activeSockets = Object.keys(auth).filter(async (socketId) => {
+        const authData = await auth.get(socketId);
         return authData.type === AuthenticationType.User && members.includes(authData.userId);
       });
       for (const socketId of activeSockets) {

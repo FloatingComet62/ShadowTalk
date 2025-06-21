@@ -4,9 +4,10 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@shadowtalk/logging';
 import Database from '@shadowtalk/database';
 import { AuthenticationType, Event } from './event';
-import { generateOperations } from './operations';
+import { AuthData, generateOperations } from './operations';
 import { Log } from '@shadowtalk/logging';
 import { assert } from './assert';
+import { Keyv } from 'keyv';
 
 Database.createUserTable();
 Database.createTokenTable();
@@ -22,7 +23,7 @@ const io = new Server(server, {
   }
 });
 
-const auth = {};
+const auth = new Keyv<AuthData>();
 
 // ./file.ts -> file
 // ./nested/file.ts -> nested.file
@@ -80,11 +81,11 @@ function iterateEvents<T, R, E>(
 io.on('connection', (socket) => {
   globalLogger.info('New client connected:', socket.id);
   const logger = globalLogger.addWorkspace(socket.id);
-  auth[socket.id] = AuthenticationType.None;
+  auth.set(socket.id, { type: AuthenticationType.None });
 
   iterateEvents(socket, async (eventLogger, event, data, emit) => {
     eventLogger.info(data);
-    if (!event.allowedAuthentication.includes(auth[socket.id] ?? AuthenticationType.None)) {
+    if (!event.allowedAuthentication.includes(await auth.get(socket.id) ?? AuthenticationType.None)) {
       return emit.error({ message: 'Unauthorized' });
     }
 
@@ -98,7 +99,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     logger.info('Client disconnected:', socket.id);
-    delete auth[socket.id];
+    auth.delete(socket.id);
   });
 });
 

@@ -22,7 +22,7 @@ export default {
   ],
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
-    const userId = operations.getUserId();
+    const userId = await operations.getUserId();
     assert(!!userId, "User ID must be defined");
     await database.markMessageAsRead(data.message_id, userId);
     return emit.reply({ marked: true });

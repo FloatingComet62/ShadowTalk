@@ -26,7 +26,7 @@ export default {
       return emit.error({ message: "Invalid username or password" });
     }
     const token = await database.createToken(user.id);
-    operations.markSocketAsUser(user.id);
+    await operations.markSocketAsUser(user.id);
     return emit.reply({ token, user: { id: user.id, name: user.name } });
   }
 } as CurrentEvent;

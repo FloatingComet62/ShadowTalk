@@ -27,7 +27,7 @@ export default {
     }
     const userId = await database.createUser({ name: data.name, password: data.password, salt: data.salt });
     const token = await database.createToken(userId);
-    operations.markSocketAsUser(userId);
+    await operations.markSocketAsUser(userId);
     return emit.reply({ token, user: { id: userId, name: data.name } });
   }
 } as CurrentEvent;

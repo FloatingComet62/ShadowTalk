@@ -23,7 +23,7 @@ export default {
   ],
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
-    const userId = operations.getUserId();
+    const userId = await operations.getUserId();
     assert(!!userId, "User ID must be defined");
     return emit.reply({ channel_id: await database.createChannel({
       name: data.name,

@@ -26,7 +26,7 @@ export default {
       return emit.error({ message: "Invalid token" });
     }
     await database.deleteToken(data.token);
-    operations.markSocketAsNone();
+    await operations.markSocketAsNone();
     return emit.reply({ message: "Logged out successfully" });
   }
 } as CurrentEvent;
