@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../event";
+import { authLoggedIn, Event } from "../../event";
 import { assert } from "../../assert";
 
 const zodSchema = z.object({
@@ -18,9 +18,7 @@ type CurrentEvent = Event<
 >;
 
 export default {
-  allowedAuthentication: [
-    AuthenticationType.User,
-  ],
+  allowedAuthentication: authLoggedIn(),
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
     const userId = await operations.getUserId();

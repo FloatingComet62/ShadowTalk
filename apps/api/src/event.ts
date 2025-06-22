@@ -7,6 +7,14 @@ export enum AuthenticationType {
   User,
 }
 
+export function authAll(): AuthenticationType[] {
+  return [AuthenticationType.None, AuthenticationType.User];
+}
+
+export function authLoggedIn(): AuthenticationType[] {
+  return [AuthenticationType.User];
+}
+
 export interface Event<T, R, E> {
   allowedAuthentication: AuthenticationType[];
   zodSchema: z.ZodSchema,

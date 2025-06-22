@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../../event";
+import { authAll, Event } from "../../event";
 import { User } from "@shadowtalk/database";
 import { assert } from "../../assert";
 
@@ -18,10 +18,7 @@ type CurrentEvent = Event<
 >;
 
 export default {
-  allowedAuthentication: [
-    AuthenticationType.None,
-    AuthenticationType.User,
-  ],
+  allowedAuthentication: authAll(),
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
     const user = await database.getUser(data.user_id);

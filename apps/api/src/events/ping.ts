@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { AuthenticationType, Event } from "../event";
+import { authAll, Event } from "../event";
 
 const zodSchema = z.object({
   hello: z.string().refine((val) => val === "world", {
@@ -10,10 +10,7 @@ const zodSchema = z.object({
 type CurrentEvent = Event<z.infer<typeof zodSchema>, { message: string }, { message: string}>;
 
 export default {
-  allowedAuthentication: [
-    AuthenticationType.None,
-    AuthenticationType.User,
-  ],
+  allowedAuthentication: authAll(),
   zodSchema,
   handler: async (data: z.infer<typeof zodSchema>, database, operations, emit) => {
     emit.reply({
