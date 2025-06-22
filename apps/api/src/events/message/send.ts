@@ -4,7 +4,7 @@ import { assert } from "../../assert";
 
 const zodSchema = z.object({
   message_content: z.string(),
-  channel_id: z.string().min(1, "Channel ID must not be empty"),
+  channel_id: z.uuid("Invalid ID"),
 });
 
 type CurrentEvent = Event<

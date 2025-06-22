@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { authLoggedIn, Event } from "../../event";
 
-const zodSchema = z.object({ token: z.string() });
+const zodSchema = z.object({ token: z.uuid("Invalid ID") });
 
 type CurrentEvent = Event<
   z.infer<typeof zodSchema>,

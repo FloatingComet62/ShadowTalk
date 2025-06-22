@@ -4,7 +4,7 @@ import { User } from "@shadowtalk/database";
 import { assert } from "../../assert";
 
 const zodSchema = z.object({
-  user_id: z.string().min(1, "User ID must not be empty"),
+  user_id: z.uuid("Invalid ID"),
 });
 
 type CurrentEvent = Event<

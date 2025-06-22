@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { authAll, Event } from "../../event";
 
-const zodSchema = z.object({ name: z.string(), password: z.string(), salt: z.string() });
+const zodSchema = z.object({ name: z.string(), password: z.string(), salt: z.string().length(32, "Salt should be 32 in length") });
 
 type CurrentEvent = Event<
   z.infer<typeof zodSchema>,
