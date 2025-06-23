@@ -14,10 +14,10 @@ import { CommonModule } from '@angular/common';
     flex-direction: row-reverse;
   }
   .content {
-    padding: 1rem;
+    padding: 1vw;
     background-color: #101010;
     color: #fff;
-    border-radius: 1rem;
+    border-radius: 1vw;
   }
   :host.self_message .content {
     background-color: #144D37;

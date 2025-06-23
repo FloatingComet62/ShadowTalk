@@ -1,13 +1,14 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { SidebarComponent } from './sidebar.component';
 import { EventInteracter, EventInteracterBuilder, SocketService } from '../socket.server';
-import { MessagesComponent } from "./messages.component";
+import { AddChannelDialogComponent } from './add_channel_dialog.component';
+import { MessagesComponent } from './messages.component';
 
 type PingEventInteractor = EventInteracter<{ hello: string }, { message: string }, { message: string }>;
 
 @Component({
   selector: 'app-root',
-  imports: [SidebarComponent, MessagesComponent],
+  imports: [SidebarComponent, MessagesComponent, AddChannelDialogComponent],
   template: `
 <style>
   :host {
@@ -16,13 +17,18 @@ type PingEventInteractor = EventInteracter<{ hello: string }, { message: string 
     height: inherit;
   }
 </style>
-<app-sidebar></app-sidebar>
-<app-messages></app-messages>
+<app-sidebar [AddChannelClick]="addChannelClick"></app-sidebar>
+@if (showAddChannelDialog) {
+  <app-channel-dialog></app-channel-dialog>
+} @else {
+  <app-messages></app-messages>
+}
   `,
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'shadowtalk';
   private ping?: PingEventInteractor;
+  showAddChannelDialog = false;
 
   constructor(private socketService: SocketService) {}
 
@@ -39,5 +45,13 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.socketService.disconnect();
     this.ping?.disconnect();
+  }
+
+  showAddChannelDialogSet() {
+    this.showAddChannelDialog = !this.showAddChannelDialog;
+  }
+
+  addChannelClick = () => {
+    this.showAddChannelDialogSet();
   }
 }

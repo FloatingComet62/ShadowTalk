@@ -1,6 +1,12 @@
 import { readFileSync, writeFileSync } from "fs";
 import { ConnectionInterface, Channel, Message, Token, User } from "./types";
 
+function hash(password: string, salt: string): string {
+  // A simple hash function for demonstration purposes.
+  // In a real application, use a secure hashing algorithm like bcrypt or Argon2.
+  return password + salt; // This is NOT secure, just a placeholder.
+}
+
 type Data = {
   user?: Record<string, User>;
   token?: Record<string, Token>;
@@ -93,6 +99,55 @@ export class Connection implements ConnectionInterface {
     }
     return this.data.user[id] as User;
   }
+  async regenerateUUID(user_id: string): Promise<string | null> {
+    if (!this.data.user || !this.data.user[user_id]) {
+      return null;
+    }
+
+    // User table
+    const user = this.data.user[user_id] as User;
+    const newId = crypto.randomUUID();
+    user.id = newId;
+    this.data.user[newId] = user;
+    delete this.data.user[user_id];
+
+    // Token table
+    if (this.data.token) {
+      for (const tokenId in this.data.token) {
+        if (this.data.token[tokenId].user_id === user_id) {
+          this.data.token[tokenId].user_id = newId;
+        }
+      }
+    }
+
+    // Channel table
+    if (this.data.channel) {
+      for (const channelId in this.data.channel) {
+        const channel = this.data.channel[channelId] as Channel;
+        const index = channel.members.findIndex((memberId) => memberId === user_id);
+        if (index !== -1) {
+          channel.members[index] = newId;
+        }
+      }
+    }
+
+    // Message table
+    if (this.data.message) {
+      for (const messageId in this.data.message) {
+        const message = this.data.message[messageId] as Message;
+        if (message.sender_id === user_id) {
+          message.sender_id = newId;
+        }
+        const index = message.read_by.findIndex((readUserId) => readUserId === user_id);
+        if (index !== -1) {
+          message.read_by[index] = newId;
+        }
+      }
+    }
+
+    await this.save();
+    return newId; // Return the new ID
+  }
   async doesUserExist(name: string): Promise<boolean> {
     if (!this.data.user) {
       return false;
@@ -110,7 +165,7 @@ export class Connection implements ConnectionInterface {
     }
     for (const user of Object.values(this.data.user)) {
       if (user.name === name) {
-        return user.password === password ? user : null;
+        return hash(user.password, user.salt) === password ? user : null;
       }
     }
     return null;
@@ -134,14 +189,12 @@ export class Connection implements ConnectionInterface {
     await this.save();
     return id;
   }
-
   async getChannel(id: string): Promise<Channel | null> {
     if (!this.data.channel || !this.data.channel[id]) {
       return null;
     }
     return this.data.channel[id] as Channel;
   }
-
   async getChannelsByUserId(userId: string): Promise<Channel[]> {
     if (!this.data.channel) {
       return [];
@@ -150,7 +203,6 @@ export class Connection implements ConnectionInterface {
       (channel) => channel.members?.includes(userId),
     ) as Channel[];
   }
-
   async addUserToChannel(channelId: string, userId: string): Promise<boolean> {
     if (!this.data.channel) {
       await this.createChannelTable();
@@ -166,7 +218,6 @@ export class Connection implements ConnectionInterface {
     await this.save();
     return true; // User added successfully
   }
-
   async removeUserFromChannel(channelId: string, userId: string): Promise<void> {
     if (!this.data.channel || !this.data.channel[channelId]) {
       return; // Channel does not exist
@@ -181,7 +232,6 @@ export class Connection implements ConnectionInterface {
     }
     await this.save();
   }
-
   async deleteChannel(id: string): Promise<void> {
     if (!this.data.channel || !this.data.channel[id]) {
       return; // Channel does not exist
@@ -195,7 +245,6 @@ export class Connection implements ConnectionInterface {
       this.data.message = {};
     }
   }
-
   async createMessage(message: Omit<Message, 'id' | 'timestamp'>): Promise<string> {
     if (!this.data.message) {
       await this.createMessageTable();
@@ -209,14 +258,12 @@ export class Connection implements ConnectionInterface {
     await this.save();
     return id;
   }
-
   async getMessage(id: string): Promise<Message | null> {
     if (!this.data.message || !this.data.message[id]) {
       return null; // Message does not exist
     }
     return this.data.message[id] as Message;
   }
-
   async getMessagesByChannelIdPagination(channelId: string, start_from_bottom: number, number_of_items: number): Promise<Message[]> {
     if (!this.data.message || !this.data.channel || !this.data.channel[channelId]) {
       return []; // No messages or channel does not exist
@@ -231,7 +278,6 @@ export class Connection implements ConnectionInterface {
     // Paginate the results
     return messages.slice(start_from_bottom, start_from_bottom + number_of_items);
   }
-  
   async getUnreadMessagesByUserIdAndChannelId(channelId: string, userId: string): Promise<Message[]> {
     if (!this.data.message || !this.data.channel || !this.data.channel[channelId]) {
       return []; // No messages or channel does not exist
@@ -245,7 +291,6 @@ export class Connection implements ConnectionInterface {
     
     return messages;
   }
-
   async markMessageAsRead(messageId: string, userId: string): Promise<void> {
     if (!this.data.message || !this.data.message[messageId]) {
       return; // Message does not exist
@@ -256,7 +301,6 @@ export class Connection implements ConnectionInterface {
       await this.save();
     }
   }
-
   async deleteMessage(id: string): Promise<void> {
     if (!this.data.message || !this.data.message[id]) {
       return; // Message does not exist
@@ -264,7 +308,6 @@ export class Connection implements ConnectionInterface {
     delete this.data.message[id];
     await this.save();
   }
-
   async deleteMessagesByChannelId(channelId: string): Promise<void> {
     if (!this.data.message || !this.getChannel(channelId)) {
       return; // No messages to delete
