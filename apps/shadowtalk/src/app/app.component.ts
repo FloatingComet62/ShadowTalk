@@ -1,15 +1,24 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { NxWelcomeComponent } from './nx-welcome.component';
+import { SidebarComponent } from './sidebar.component';
 import { EventInteracter, EventInteracterBuilder, SocketService } from '../socket.server';
+import { MessagesComponent } from "./messages.component";
 
 type PingEventInteractor = EventInteracter<{ hello: string }, { message: string }, { message: string }>;
 
 @Component({
-  imports: [NxWelcomeComponent, RouterModule],
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css',
+  imports: [SidebarComponent, MessagesComponent],
+  template: `
+<style>
+  :host {
+    background-color: #101010;
+    display: flex;
+    height: inherit;
+  }
+</style>
+<app-sidebar></app-sidebar>
+<app-messages></app-messages>
+  `,
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'shadowtalk';

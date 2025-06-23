@@ -85,7 +85,7 @@ io.on('connection', (socket) => {
 
   iterateEvents(socket, async (eventLogger, event, data, emit) => {
     eventLogger.info(data);
-    if (!event.allowedAuthentication.includes(await auth.get(socket.id) ?? AuthenticationType.None)) {
+    if (!event.allowedAuthentication.includes((await auth.get(socket.id)).type ?? AuthenticationType.None)) {
       return emit.error({ message: 'Unauthorized' });
     }
 
