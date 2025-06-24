@@ -8,6 +8,7 @@ import { AuthData, generateOperations } from './operations';
 import { Log } from '@shadowtalk/logging';
 import { assert } from './assert';
 import { Keyv } from 'keyv';
+import { Ratelimiter } from './ratelimiter';
 
 Database.createUserTable();
 Database.createTokenTable();
@@ -24,6 +25,7 @@ const io = new Server(server, {
 });
 
 const auth = new Keyv<AuthData>();
+const ratelimiter = new Ratelimiter();
 
 // ./file.ts -> file
 // ./nested/file.ts -> nested.file
@@ -82,11 +84,23 @@ io.on('connection', (socket) => {
   globalLogger.info('New client connected:', socket.id);
   const logger = globalLogger.addWorkspace(socket.id);
   auth.set(socket.id, { type: AuthenticationType.None });
+  ratelimiter.addSocketConnection(socket.id);
 
   iterateEvents(socket, async (eventLogger, event, data, emit) => {
+    if (await ratelimiter.receiveRequest(socket, socket.id) && socket.connected) {
+      return emit.error({ message: 'Ratelimited' });
+    }
+
     eventLogger.info(data);
-    if (!event.allowedAuthentication.includes((await auth.get(socket.id)).type ?? AuthenticationType.None)) {
+
+    const user_auth = await auth.get(socket.id);
+
+    if (!event.allowedAuthentication.includes(user_auth.type ?? AuthenticationType.None)) {
       return emit.error({ message: 'Unauthorized' });
+    }
+
+    if (user_auth.type == AuthenticationType.User && await ratelimiter.isBlocked(user_auth.userId)) {
+      return emit.error({ message: 'Ratelimited' });
     }
 
     const result = event.zodSchema.safeParse(data);
@@ -94,12 +108,13 @@ io.on('connection', (socket) => {
       return emit.error({ message: result.error.issues.map(issue => issue.message).join(', ') });
     }
 
-    await event.handler(result.data, Database, generateOperations(socket, auth), emit);
+    await event.handler(result.data, Database, generateOperations(socket, auth, ratelimiter), emit);
   });
 
   socket.on('disconnect', () => {
     logger.info('Client disconnected:', socket.id);
     auth.delete(socket.id);
+    ratelimiter.removeSocketConnection(socket.id);
   });
 });
 

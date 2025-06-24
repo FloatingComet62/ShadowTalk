@@ -1,6 +1,7 @@
 import { Socket } from "socket.io";
 import { AuthenticationType } from "./event";
 import Keyv from "keyv";
+import { Ratelimiter } from "./ratelimiter";
 
 export type Operations = {
   markSocketAsUser: (user_id: string) => Promise<void>;
@@ -18,16 +19,19 @@ export type AuthData = {
 
 export function generateOperations(
   socket: Socket,
-  auth: Keyv<AuthData>
+  auth: Keyv<AuthData>,
+  ratelimiter: Ratelimiter,
 ): Operations {
   return {
     markSocketAsUser: async (user_id: string) => {
+      ratelimiter.addUserAuthentication(socket.id, user_id);
       await auth.set(socket.id, {
         type: AuthenticationType.User,
         userId: user_id,
       });
     },
     markSocketAsNone: async () => {
+      ratelimiter.removeUserAuthentication(socket.id);
       await auth.set(socket.id, {
         type: AuthenticationType.None,
       });
