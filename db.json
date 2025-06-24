@@ -1,0 +1,37 @@
+{
+  "user": {
+    "44521e05-e03e-4bc7-84ef-fb7be64b49e0": {
+      "id": "44521e05-e03e-4bc7-84ef-fb7be64b49e0",
+      "name": "admin",
+      "password": "5bvTTWHc7eg7t+1g4NRtxX0sEdShGIdh96FNBaUcb1FVf0LHBuAfh1IQmLZlaaZuI2UygbZt/zD7aCJ2tLnkvA==",
+      "salt": "gWcAJ6r0yzFoLyddyrol7D/LieJclW8/HasT62UjBfdJL6DnbRqrT88RF6TRuRCudaYaNL3Qz9Me0VvPT96LW4sjaTeXtiUKeIg+QbxGhy96GCoS7XcdqkqmBVe6Fg1nGE+Wr7JhxesKC16wyg0wWHj5eirIfJ1Gq6zh8MNPWHg="
+    },
+    "e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3": {
+      "id": "e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3",
+      "name": "admin2",
+      "password": "byzmEKTyEW5hHBBsk71itQq4++ZYzGoMuNhYVC2XpvsXLPygRKX3UGJtfti9aUPjP7WjjmaLXJ0dt+w84mNP6Q==",
+      "salt": "0nnu4YgLCGrEtywyN3TF0wOh3rzdkypwlUkZuaEuB4J+Qt/j52lsqmnzCA5+siHgo8wscdRghmN52TwPHdxfBdM99AuXFXQ258Or/sG8lZ4SgyGhIyxUaprad1/EK1ZdmUv/NXPDWPSGDBRyfop9Hiro/L0/7yLWj6YSTCDE0xI="
+    }
+  },
+  "token": {
+    "e841d223-fb05-456e-b648-ddf5e4f591cf": {
+      "id": "e841d223-fb05-456e-b648-ddf5e4f591cf",
+      "user_id": "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
+    },
+    "15ac918c-0f53-4215-815c-c1c0a3aaa5ca": {
+      "id": "15ac918c-0f53-4215-815c-c1c0a3aaa5ca",
+      "user_id": "e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3"
+    }
+  },
+  "channel": {
+    "310949cd-d689-4e85-992a-8d48b50919ec": {
+      "id": "310949cd-d689-4e85-992a-8d48b50919ec",
+      "name": "test",
+      "members": [
+        "e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3",
+        "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
+      ]
+    }
+  },
+  "message": {}
+}

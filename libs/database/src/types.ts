@@ -36,7 +36,7 @@ export interface ConnectionInterface {
   deleteToken(token: string): Promise<void>;
 
   createUserTable(): Promise<void>;
-  createUser(user: Omit<User, 'id'>): Promise<string>; // returns id
+  createUser(user: Omit<User, 'id' | 'salt'>): Promise<string>; // returns id
   regenerateUUID(user_id: string): Promise<string | null>; // returns new id
   getUser(id: string): Promise<User | null>;
   doesUserExist(name: string): Promise<boolean>;

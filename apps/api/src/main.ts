@@ -8,7 +8,7 @@ import { AuthData, generateOperations } from './operations';
 import { Log } from '@shadowtalk/logging';
 import { assert } from './assert';
 import { Keyv } from 'keyv';
-import { Ratelimiter } from './ratelimiter';
+import { Ratelimiter, RatelimiterKeyv, RatelimiterMock } from './ratelimiter';
 
 Database.createUserTable();
 Database.createTokenTable();
@@ -25,7 +25,7 @@ const io = new Server(server, {
 });
 
 const auth = new Keyv<AuthData>();
-const ratelimiter = new Ratelimiter();
+const ratelimiter: Ratelimiter = process.env.IS_DEV == "true" ? new RatelimiterMock() : new RatelimiterKeyv();
 
 // ./file.ts -> file
 // ./nested/file.ts -> nested.file
@@ -87,7 +87,7 @@ io.on('connection', (socket) => {
   ratelimiter.addSocketConnection(socket.id);
 
   iterateEvents(socket, async (eventLogger, event, data, emit) => {
-    if (await ratelimiter.receiveRequest(socket, socket.id) && socket.connected) {
+    if (await ratelimiter.receiveRequest(socket.id, () => socket.disconnect()) && socket.connected) {
       return emit.error({ message: 'Ratelimited' });
     }
 
@@ -96,16 +96,16 @@ io.on('connection', (socket) => {
     const user_auth = await auth.get(socket.id);
 
     if (!event.allowedAuthentication.includes(user_auth.type ?? AuthenticationType.None)) {
-      return emit.error({ message: 'Unauthorized' });
+      return emit.error({ type: 'auth_middleware_error', message: 'Unauthorized' });
     }
 
     if (user_auth.type == AuthenticationType.User && await ratelimiter.isBlocked(user_auth.userId)) {
-      return emit.error({ message: 'Ratelimited' });
+      return emit.error({ type: 'middleware_error', message: 'Ratelimited' });
     }
 
     const result = event.zodSchema.safeParse(data);
     if (!result.success) {
-      return emit.error({ message: result.error.issues.map(issue => issue.message).join(', ') });
+      return emit.error({ type: 'parsing_error', message: result.error.issues.map(issue => issue.message).join(', ') });
     }
 
     await event.handler(result.data, Database, generateOperations(socket, auth, ratelimiter), emit);

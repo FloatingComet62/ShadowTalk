@@ -1,10 +1,12 @@
 import { readFileSync, writeFileSync } from "fs";
 import { ConnectionInterface, Channel, Message, Token, User } from "./types";
+import { randomBytes, pbkdf2Sync, timingSafeEqual } from 'crypto';
 
-function hash(password: string, salt: string): string {
-  // A simple hash function for demonstration purposes.
-  // In a real application, use a secure hashing algorithm like bcrypt or Argon2.
-  return password + salt; // This is NOT secure, just a placeholder.
+function generateSalt() {
+  return randomBytes(128).toString('base64');
+}
+function hashPassword(password: string, salt: string) {
+  return pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('base64');
 }
 
 type Data = {
@@ -81,14 +83,17 @@ export class Connection implements ConnectionInterface {
       this.data.user = {};
     }
   }
-  async createUser(user: Omit<User, 'id'>): Promise<string> {
+  async createUser(user: Omit<User, 'id' | 'salt'>): Promise<string> {
     if (!this.data.user) {
       await this.createUserTable();
     }
     const id = crypto.randomUUID();
+    const salt = generateSalt();
+    user.password = hashPassword(user.password, salt);
     this.data.user[id] = {
       id: id,
-      ...user
+      ...user,
+      salt
     };
     await this.save();
     return id;
@@ -164,9 +169,11 @@ export class Connection implements ConnectionInterface {
       return null;
     }
     for (const user of Object.values(this.data.user)) {
-      if (user.name === name) {
-        return hash(user.password, user.salt) === password ? user : null;
+      if (user.name !== name) {
+        continue;
       }
+      const hash = hashPassword(password, user.salt);
+      return timingSafeEqual(Buffer.from(user.password), Buffer.from(hash)) ? user : null;
     }
     return null;
   }

@@ -4,7 +4,16 @@ import { EventInteracter, EventInteracterBuilder, SocketService } from '../socke
 import { AddChannelDialogComponent } from './add_channel_dialog.component';
 import { MessagesComponent } from './messages.component';
 
-type PingEventInteractor = EventInteracter<{ hello: string }, { message: string }, { message: string }>;
+type TokenAuthInteractor = EventInteracter<
+  { token: string },
+  {
+    token: string,
+    user: { id: string, name: string },
+  } | { message: string },
+  {
+    message: string;
+  }
+>;
 
 @Component({
   selector: 'app-root',
@@ -27,24 +36,26 @@ type PingEventInteractor = EventInteracter<{ hello: string }, { message: string 
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'shadowtalk';
-  private ping?: PingEventInteractor;
+  private token_auth?: TokenAuthInteractor;
   showAddChannelDialog = false;
 
   constructor(private socketService: SocketService) {}
 
   ngOnInit() {
     this.socketService.initConnection();
-    this.ping = (new EventInteracterBuilder(this.socketService, 'ping') as EventInteracterBuilder<PingEventInteractor>)
-      .onMessage((data) => console.log('Ping received:', data))
-      .onError((error) => console.error('Ping error:', error))
+    this.token_auth = new EventInteracterBuilder<TokenAuthInteractor>(this.socketService, 'authenticate.token')
+      .onMessage((data) => console.log('Token auth received:', data))
+      .onError((error) => console.error('Token auth error:', error))
       .build();
 
-    this.ping.emit({ hello: 'world' })
+    this.token_auth.emit({
+      token: "e841d223-fb05-456e-b648-ddf5e4f591cf",
+    })
   }
 
   ngOnDestroy() {
     this.socketService.disconnect();
-    this.ping?.disconnect();
+    this.token_auth?.disconnect();
   }
 
   showAddChannelDialogSet() {

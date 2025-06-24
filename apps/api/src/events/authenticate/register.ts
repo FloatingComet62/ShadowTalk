@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { authAll, Event } from "../../event";
 
-const zodSchema = z.object({ name: z.string(), password: z.string(), salt: z.string().length(32, "Salt should be 32 in length") });
+const zodSchema = z.object({ name: z.string(), password: z.string() });
 
 type CurrentEvent = Event<
   z.infer<typeof zodSchema>,
@@ -22,7 +22,7 @@ export default {
     if (existing_user) {
       return emit.error({ message: "Username taken" });
     }
-    const userId = await database.createUser({ name: data.name, password: data.password, salt: data.salt });
+    const userId = await database.createUser({ name: data.name, password: data.password });
     const token = await database.createToken(userId);
     await operations.markSocketAsUser(userId);
     return emit.reply({ token, user: { id: userId, name: data.name } });

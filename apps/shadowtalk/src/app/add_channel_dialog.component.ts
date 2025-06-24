@@ -1,5 +1,12 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { EventInteracter, EventInteracterBuilder, SocketService } from '../socket.server';
+
+type CreateChannelEventInteractor = EventInteracter<
+  { name: string; members: string[] },
+  { channel_id: string },
+  { message: string }
+>;
 
 @Component({
   selector: 'app-channel-dialog',
@@ -53,8 +60,32 @@ import { CommonModule } from '@angular/common';
 </style>
 <div class="title">Create a new channel</div>
 <input type="text" placeholder="Channel name" />
-<button>Create Channel</button>
+<button (click)="createChannelClicked()">Create Channel</button>
   `,
   encapsulation: ViewEncapsulation.Emulated,
 })
-export class AddChannelDialogComponent {}
+export class AddChannelDialogComponent implements OnInit, OnDestroy {
+  private channelCreate?: CreateChannelEventInteractor;
+
+  constructor(private socketService: SocketService) {}
+
+  ngOnInit(): void {
+    this.socketService.initConnection();
+    this.channelCreate = new EventInteracterBuilder<CreateChannelEventInteractor>(this.socketService, 'channel.create')
+      .onMessage((data) => console.log('Channel created:', data))
+      .onError((error) => console.error('Channel creation error:', error))
+      .build();
+  }
+
+  ngOnDestroy(): void {
+    this.socketService.disconnect();
+    this.channelCreate?.disconnect();
+  }
+
+  createChannelClicked(): void {
+    this.channelCreate?.emit({
+      name: "test",
+      members: ["e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3"],
+    })
+  }
+}

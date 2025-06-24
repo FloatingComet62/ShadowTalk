@@ -1,5 +1,4 @@
 import Keyv from "keyv";
-import { Socket } from "socket.io";
 
 // a penalty is a request that came in too fast, (currrentRequestTimestamp - lastRequestTimestamp) < PENALTY_TRIGGER => if true, then add a penalty
 const PENALTY_TRIGGER = 1000;
@@ -14,8 +13,16 @@ type RatelimiterData = {
   blockedUntil?: Date;
 };
 
+export interface Ratelimiter {
+  addSocketConnection(socketId: string): Promise<void>;
+  addUserAuthentication(socketId: string, userId: string): Promise<void>;
+  removeUserAuthentication(socketId: string): Promise<void>;
+  removeSocketConnection(socketId: string): Promise<void>;
+  isBlocked(userId: string): Promise<boolean>;
+  receiveRequest(socketId: string, disconnectSocket: () => void): Promise<boolean>;
+}
 
-export class Ratelimiter {
+export class RatelimiterKeyv implements Ratelimiter {
   private ratelimiter: Keyv<RatelimiterData>;
   /// you might be asking why is the blockedUntil data repeated? well it's because if the user reconnects the socket id changes but the authentication will remain the same
   private blockedUsers: Keyv<Date>;
@@ -36,12 +43,14 @@ export class Ratelimiter {
 
   async addUserAuthentication(socketId: string, userId: string) {
     const data = await this.ratelimiter.get(socketId);
+    data.lastRequestTimestamp = new Date(data.lastRequestTimestamp);
     data.userId = userId;
     await this.ratelimiter.set(socketId, data);
   }
 
   async removeUserAuthentication(socketId: string) {
     const data = await this.ratelimiter.get(socketId);
+    data.lastRequestTimestamp = new Date(data.lastRequestTimestamp);
     data.userId = null;
     await this.ratelimiter.set(socketId, data);
   }
@@ -62,7 +71,7 @@ export class Ratelimiter {
   }
 
   // If returned true, don't respond to the request
-  async receiveRequest(socket: Socket, socketId: string): Promise<boolean> {
+  async receiveRequest(socketId: string, disconnectSocket: () => void): Promise<boolean> {
     const data = await this.ratelimiter.get(socketId);
     if (!data) {
       return false;
@@ -71,6 +80,9 @@ export class Ratelimiter {
       // User is blocked, do not process the request
       return true;
     }
+
+    // idk why but the fucking date returned is a string
+    data.lastRequestTimestamp = new Date(data.lastRequestTimestamp);
 
     const currentTimestamp = new Date();
     const timeSinceLastRequest = currentTimestamp.getTime() - data.lastRequestTimestamp.getTime();
@@ -89,8 +101,7 @@ export class Ratelimiter {
     }
 
     if (!data.userId) {
-      // just disconnect the socket if the user is not authenticated
-      socket.disconnect();
+      disconnectSocket();
       this.removeSocketConnection(socketId);
       return true;
     }
@@ -100,5 +111,31 @@ export class Ratelimiter {
     data.numberOfPenalties = 0;
     data.blockedUntil = blockedUntil;
     return true;
+  }
+}
+
+export class RatelimiterMock implements Ratelimiter {
+  async addSocketConnection(socketId: string): Promise<void> {
+    return;
+  }
+
+  async addUserAuthentication(socketId: string, userId: string): Promise<void> {
+    return;
+  }
+
+  async removeUserAuthentication(socketId: string): Promise<void> {
+    return;
+  }
+
+  async removeSocketConnection(socketId: string): Promise<void> {
+    return;
+  }
+
+  async isBlocked(userId: string): Promise<boolean> {
+    return false;
+  }
+
+  async receiveRequest(socketId: string, disconnectSocket: () => void): Promise<boolean> {
+    return false;
   }
 }
