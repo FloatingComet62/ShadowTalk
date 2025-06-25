@@ -267,34 +267,31 @@ export class Connection implements ConnectionInterface {
   }
   async getMessage(id: string): Promise<Message | null> {
     if (!this.data.message || !this.data.message[id]) {
-      return null; // Message does not exist
+      return null;
     }
     return this.data.message[id] as Message;
   }
   async getMessagesByChannelIdPagination(channelId: string, start_from_bottom: number, number_of_items: number): Promise<Message[]> {
     if (!this.data.message || !this.data.channel || !this.data.channel[channelId]) {
-      return []; // No messages or channel does not exist
+      return [];
     }
     const messages = Object.values(this.data.message).filter(
       (message) => message.channel_id === channelId,
     ) as Message[];
     
-    // Sort messages by timestamp in descending order
-    messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
-    // Paginate the results
     return messages.slice(start_from_bottom, start_from_bottom + number_of_items);
   }
   async getUnreadMessagesByUserIdAndChannelId(channelId: string, userId: string): Promise<Message[]> {
     if (!this.data.message || !this.data.channel || !this.data.channel[channelId]) {
-      return []; // No messages or channel does not exist
+      return [];
     }
     const messages = Object.values(this.data.message).filter(
       (message) => message.channel_id === channelId && !message.read_by?.includes(userId),
     ) as Message[];
     
-    // Sort messages by timestamp in descending order
-    messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
     return messages;
   }

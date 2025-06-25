@@ -25,6 +25,7 @@ const io = new Server(server, {
 });
 
 const auth = new Keyv<AuthData>();
+const socketConnetionIds = new Set<string>();
 const ratelimiter: Ratelimiter = process.env.IS_DEV == "true" ? new RatelimiterMock() : new RatelimiterKeyv();
 
 // ./file.ts -> file
@@ -84,6 +85,7 @@ io.on('connection', (socket) => {
   globalLogger.info('New client connected:', socket.id);
   const logger = globalLogger.addWorkspace(socket.id);
   auth.set(socket.id, { type: AuthenticationType.None });
+  socketConnetionIds.add(socket.id);
   ratelimiter.addSocketConnection(socket.id);
 
   iterateEvents(socket, async (eventLogger, event, data, emit) => {
@@ -108,12 +110,13 @@ io.on('connection', (socket) => {
       return emit.error({ type: 'parsing_error', message: result.error.issues.map(issue => issue.message).join(', ') });
     }
 
-    await event.handler(result.data, Database, generateOperations(socket, auth, ratelimiter), emit);
+    await event.handler(result.data, Database, generateOperations(socket, socketConnetionIds, auth, ratelimiter), emit);
   });
 
   socket.on('disconnect', () => {
     logger.info('Client disconnected:', socket.id);
     auth.delete(socket.id);
+    socketConnetionIds.delete(socket.id)
     ratelimiter.removeSocketConnection(socket.id);
   });
 });

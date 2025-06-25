@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EventInteracter, EventInteracterBuilder, SocketService } from '../socket.server';
 
@@ -59,13 +59,16 @@ type CreateChannelEventInteractor = EventInteracter<
   }
 </style>
 <div class="title">Create a new channel</div>
-<input type="text" placeholder="Channel name" />
+<input type="text" placeholder="Channel name" #channelNameRef />
 <button (click)="createChannelClicked()">Create Channel</button>
   `,
   encapsulation: ViewEncapsulation.Emulated,
 })
 export class AddChannelDialogComponent implements OnInit, OnDestroy {
   private channelCreate?: CreateChannelEventInteractor;
+  @ViewChild('channelNameRef') channelNameRef!: ElementRef<HTMLInputElement>;
+  @Output() addChannelClick = new EventEmitter<void>();
+  user_id = localStorage.getItem('user_id');
 
   constructor(private socketService: SocketService) {}
 
@@ -78,14 +81,18 @@ export class AddChannelDialogComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.socketService.disconnect();
     this.channelCreate?.disconnect();
   }
 
   createChannelClicked(): void {
+    if (!this.user_id) {
+      return;
+    }
     this.channelCreate?.emit({
-      name: "test",
-      members: ["e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3"],
-    })
+      name: this.channelNameRef.nativeElement.value,
+      members: [this.user_id],
+    });
+    this.channelNameRef.nativeElement.value = '';
+    this.addChannelClick.emit();
   }
 }

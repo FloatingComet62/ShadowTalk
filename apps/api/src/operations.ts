@@ -19,6 +19,7 @@ export type AuthData = {
 
 export function generateOperations(
   socket: Socket,
+  socketConnetionIds: Set<string>,
   auth: Keyv<AuthData>,
   ratelimiter: Ratelimiter,
 ): Operations {
@@ -44,11 +45,11 @@ export function generateOperations(
       return authData.userId;
     },
     broadcast: async (message_content: string, channel_id: string, members: string[]) => {
-      const activeSockets = Object.keys(auth).filter(async (socketId) => {
+      for (const socketId of socketConnetionIds) {
         const authData = await auth.get(socketId);
-        return authData.type === AuthenticationType.User && members.includes(authData.userId);
-      });
-      for (const socketId of activeSockets) {
+        if (authData.type !== AuthenticationType.User || !members.includes(authData.userId)) {
+          continue;
+        }
         const socketToEmit = socket.to(socketId);
         if (!socketToEmit) {
           continue;

@@ -93,11 +93,11 @@ export class EventInteracter<T, R, E> {
     errorHandler: (error: E) => void
   ) {
     this.eventName = eventName;
-    this.messageSub = this.socketService.listen<R>(`${this.eventName}.reply`).subscribe((data: R) => {
-      this.socketService.ngZone.run(() => messageHandler(data));
+    this.messageSub = this.socketService.listen<string>(`${this.eventName}.reply`).subscribe((data: string) => {
+      this.socketService.ngZone.run(() => messageHandler(JSON.parse(data) as R));
     });
-    this.errorSub = this.socketService.listen<E>(`${this.eventName}.error`).subscribe((error: E) => {
-      this.socketService.ngZone.run(() => errorHandler(error));
+    this.errorSub = this.socketService.listen<string>(`${this.eventName}.error`).subscribe((error: string) => {
+      this.socketService.ngZone.run(() => errorHandler(JSON.parse(error) as E));
     });
   }
 

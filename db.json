@@ -31,7 +31,56 @@
         "e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3",
         "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
       ]
+    },
+    "4a51207b-e05a-42b7-a872-610466ef0b70": {
+      "id": "4a51207b-e05a-42b7-a872-610466ef0b70",
+      "name": "test2",
+      "members": [
+        "44521e05-e03e-4bc7-84ef-fb7be64b49e0",
+        "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
+      ]
     }
   },
-  "message": {}
+  "message": {
+    "587d6e88-c595-4b47-90d8-89bd88dc6cfb": {
+      "id": "587d6e88-c595-4b47-90d8-89bd88dc6cfb",
+      "channel_id": "310949cd-d689-4e85-992a-8d48b50919ec",
+      "content": "test",
+      "sender_id": "44521e05-e03e-4bc7-84ef-fb7be64b49e0",
+      "read_by": [
+        "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
+      ],
+      "timestamp": "2025-06-25T06:18:31.292Z"
+    },
+    "1a7d5c99-f4f9-48c2-98d6-6306fb91b4c5": {
+      "id": "1a7d5c99-f4f9-48c2-98d6-6306fb91b4c5",
+      "channel_id": "310949cd-d689-4e85-992a-8d48b50919ec",
+      "content": "test2",
+      "sender_id": "44521e05-e03e-4bc7-84ef-fb7be64b49e0",
+      "read_by": [
+        "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
+      ],
+      "timestamp": "2025-06-25T06:32:50.669Z"
+    },
+    "8a8943a7-804a-43e2-8fc2-b22e3df13ced": {
+      "id": "8a8943a7-804a-43e2-8fc2-b22e3df13ced",
+      "channel_id": "310949cd-d689-4e85-992a-8d48b50919ec",
+      "content": "test3",
+      "sender_id": "44521e05-e03e-4bc7-84ef-fb7be64b49e0",
+      "read_by": [
+        "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
+      ],
+      "timestamp": "2025-06-25T06:49:23.104Z"
+    },
+    "64641976-8eb7-4d57-82b3-2d7989016df1": {
+      "id": "64641976-8eb7-4d57-82b3-2d7989016df1",
+      "channel_id": "310949cd-d689-4e85-992a-8d48b50919ec",
+      "content": "test4",
+      "sender_id": "44521e05-e03e-4bc7-84ef-fb7be64b49e0",
+      "read_by": [
+        "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
+      ],
+      "timestamp": "2025-06-25T06:51:14.012Z"
+    }
+  }
 }
