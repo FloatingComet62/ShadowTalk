@@ -48,7 +48,7 @@ type MessageSendEventInteractor = EventInteracter<
   }
 </style>
 <input type="text" placeholder="Type your message here..." #inputRef>
-<button class="send_button" (click)="sendMessage(inputRef.value)">
+<button class="send_button" (click)="sendMessage(inputRef.value.trim())">
   <svg width="64px" height="64px" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M22.1525 3.55321L11.1772 21.0044L9.50686 12.4078L2.00002 7.89795L22.1525 3.55321Z" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M9.45557 12.4436L22.1524 3.55321" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
 </button>
   `,
@@ -76,6 +76,16 @@ export class MessageInputComponent implements OnInit, OnDestroy {
       })
       .onError((error) => console.error('Channel creation error:', error))
       .build();
+    
+    window.onkeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && this.inputRef) {
+        event.preventDefault();
+        const message_content = this.inputRef.nativeElement.value.trim();
+        if (message_content) {
+          this.sendMessage(message_content);
+        }
+      }
+    }
   }
 
   ngOnDestroy(): void {

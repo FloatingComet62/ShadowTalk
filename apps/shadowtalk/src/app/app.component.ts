@@ -4,6 +4,7 @@ import { EventInteracter, EventInteracterBuilder, SocketService } from '../socke
 import { AddChannelDialogComponent } from './add_channel_dialog.component';
 import { MessagesComponent } from './messages.component';
 import { CommonModule } from '@angular/common';
+import { AddChannelComponent } from "./blank.component";
 
 type TokenAuthInteractor = EventInteracter<
   { token: string },
@@ -20,7 +21,7 @@ type Screens = 'add-channel-dialog' | 'messages' | 'blank';
 
 @Component({
   selector: 'app-root',
-  imports: [SidebarComponent, MessagesComponent, AddChannelDialogComponent, CommonModule],
+  imports: [SidebarComponent, MessagesComponent, AddChannelDialogComponent, CommonModule, AddChannelComponent],
   template: `
 <style>
   :host {
@@ -34,11 +35,9 @@ type Screens = 'add-channel-dialog' | 'messages' | 'blank';
   (ChannelClick)="ChannelClick($event)"
   (AddChannelClick)="addChannelClick()"
 ></app-sidebar>
-<app-channel-dialog *ngIf="screen === 'add-channel-dialog'" (addChannelClick)="ChannelCreated()"></app-channel-dialog>
+<app-channel-dialog *ngIf="screen === 'add-channel-dialog'" (addChannelClick)="ChannelCreated()" [usernames]="getUsernames()"></app-channel-dialog>
 <app-messages *ngIf="screen === 'messages'" [authenticated]="isAuthenticated" [channel_id]="channel_id"></app-messages>
-<div *ngIf="screen === 'blank'" style="flex: 1; display: flex; justify-content: center; align-items: center; color: white;">
-  <h1>Welcome to ShadowTalk!</h1>
-</div>
+<app-blank *ngIf="screen === 'blank'"></app-blank>
   `,
 })
 export class AppComponent implements OnInit, OnDestroy {
@@ -68,8 +67,12 @@ export class AppComponent implements OnInit, OnDestroy {
       .onError((error) => console.error('Token auth error:', error))
       .build();
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return;
+    }
     this.tokenAuth.emit({
-      token: "e841d223-fb05-456e-b648-ddf5e4f591cf",
+      token,
     })
   }
 
@@ -94,5 +97,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.channel_id = channel_id;
     this.screen = 'messages';
     this.cdr.detectChanges();
+  }
+
+  getUsernames(): string[] {
+    const output = [];
+    for (let i = 0; i < 15; i++) {
+      output.push(`${i}`.repeat(10));
+    }
+    return output;
+    // return Array.from(new Set(
+    //   this.sidebar.channels.flatMap((channel) => channel.members)
+    // )).filter((user_id) => user_id != localStorage.getItem("user_id"));
   }
 }
