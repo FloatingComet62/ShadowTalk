@@ -4,7 +4,7 @@ import { assert } from "../../assert";
 
 const zodSchema = z.object({
   name: z.string().min(1, "Channel name must not be empty"),
-  members: z.string().array().min(1, "At least one member must be specified"),
+  members: z.uuid().array().min(1, "At least one member must be specified"),
 });
 
 type CurrentEvent = Event<

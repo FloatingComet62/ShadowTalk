@@ -39,6 +39,7 @@ export interface ConnectionInterface {
   createUser(user: Omit<User, 'id' | 'salt'>): Promise<string>; // returns id
   regenerateUUID(user_id: string): Promise<string | null>; // returns new id
   getUser(id: string): Promise<User | null>;
+  getUsers(ids: string[]): Promise<User[]>;
   doesUserExist(name: string): Promise<boolean>;
   validateUserPassword(name: string, password: string): Promise<User | null>;
 
@@ -71,6 +72,7 @@ export const ConnectionInterfaceMethods = [
   { name: 'createUser', args: ['user'] },
   { name: 'regenerateUUID', args: ['user_id'] },
   { name: 'getUser', args: ['id'] },
+  { name: 'getUsers', args: ['ids'] },
   { name: 'doesUserExist', args: ['name'] },
   { name: 'validateUserPassword', args: ['name', 'password'] },
 

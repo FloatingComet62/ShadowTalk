@@ -154,7 +154,7 @@ export class AddChannelDialogComponent implements OnInit, OnDestroy {
     }
     this.channelCreate?.emit({
       name: this.channelNameRef.nativeElement.value,
-      members: this.getSearchResults(),
+      members: this.convertNamesToUUIDS(this.getSearchResults()),
     });
     this.channelNameRef.nativeElement.value = '';
     this.addChannelClick.emit();
@@ -198,5 +198,18 @@ export class AddChannelDialogComponent implements OnInit, OnDestroy {
     const externalUUID = this.userSearchQuery;
     this.userSearchQuery = '';
     this.externalUUIDs.add(externalUUID);
+  }
+
+  convertNamesToUUIDS(names: string[]): string[] {
+    return names.map((name) => {
+      if (this.isUUID(name)) {
+        return name;
+      }
+      const userId = localStorage.getItem(`user_id_${name}`);
+      if (userId) {
+        return userId;
+      }
+      return undefined;
+    }).filter((id) => id !== undefined) as string[];
   }
 }

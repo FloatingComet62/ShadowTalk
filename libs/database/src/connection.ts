@@ -104,6 +104,12 @@ export class Connection implements ConnectionInterface {
     }
     return this.data.user[id] as User;
   }
+  async getUsers(ids: string[]): Promise<User[]> {
+    if (!this.data.user) {
+      return [];
+    }
+    return ids.map((id) => this.data.user[id]).filter((user) => user !== undefined);
+  }
   async regenerateUUID(user_id: string): Promise<string | null> {
     if (!this.data.user || !this.data.user[user_id]) {
       return null;

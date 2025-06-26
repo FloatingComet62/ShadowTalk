@@ -8,9 +8,7 @@
     },
     "e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3": {
       "id": "e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3",
-      "name": "admin2",
-      "password": "byzmEKTyEW5hHBBsk71itQq4++ZYzGoMuNhYVC2XpvsXLPygRKX3UGJtfti9aUPjP7WjjmaLXJ0dt+w84mNP6Q==",
-      "salt": "0nnu4YgLCGrEtywyN3TF0wOh3rzdkypwlUkZuaEuB4J+Qt/j52lsqmnzCA5+siHgo8wscdRghmN52TwPHdxfBdM99AuXFXQ258Or/sG8lZ4SgyGhIyxUaprad1/EK1ZdmUv/NXPDWPSGDBRyfop9Hiro/L0/7yLWj6YSTCDE0xI="
+      "name": "admin2"
     }
   },
   "token": {
@@ -37,6 +35,15 @@
       "name": "test2",
       "members": [
         "44521e05-e03e-4bc7-84ef-fb7be64b49e0",
+        "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
+      ]
+    },
+    "98a34931-7817-4ec6-afbd-02970d8f8afd": {
+      "id": "98a34931-7817-4ec6-afbd-02970d8f8afd",
+      "name": "group chat",
+      "members": [
+        "e8ff0b96-de8c-4ffe-a00d-2b6660ac47c3",
+        "497dcba3-ecbf-4587-a2dd-5eb0665e6880",
         "44521e05-e03e-4bc7-84ef-fb7be64b49e0"
       ]
     }

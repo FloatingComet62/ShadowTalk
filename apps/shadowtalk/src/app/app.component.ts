@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { SidebarComponent } from './sidebar.component';
 import { EventInteracter, EventInteracterBuilder, SocketService } from '../socket.server';
 import { AddChannelDialogComponent } from './add_channel_dialog.component';
 import { MessagesComponent } from './messages.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AddChannelComponent } from "./blank.component";
 
 type TokenAuthInteractor = EventInteracter<
@@ -48,7 +48,11 @@ export class AppComponent implements OnInit, OnDestroy {
   screen: Screens = 'blank';
   channel_id = '';
 
-  constructor(private socketService: SocketService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private socketService: SocketService,
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: object
+  ) {}
 
   ngOnInit() {
     this.socketService.initConnection();
@@ -67,13 +71,15 @@ export class AppComponent implements OnInit, OnDestroy {
       .onError((error) => console.error('Token auth error:', error))
       .build();
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      return;
+    if (isPlatformBrowser(this.platformId)) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+      this.tokenAuth.emit({
+        token,
+      })
     }
-    this.tokenAuth.emit({
-      token,
-    })
   }
 
   ngOnDestroy() {
@@ -100,13 +106,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   getUsernames(): string[] {
-    const output = [];
-    for (let i = 0; i < 15; i++) {
-      output.push(`${i}`.repeat(10));
-    }
-    return output;
-    // return Array.from(new Set(
-    //   this.sidebar.channels.flatMap((channel) => channel.members)
-    // )).filter((user_id) => user_id != localStorage.getItem("user_id"));
+    const local_user_id = localStorage.getItem('user_id');
+    return Array.from(new Set(
+      this.sidebar.channels.flatMap((channel) => channel.members)
+    ))
+      .filter((user_id) => user_id != local_user_id)
+      .map((user_id) => localStorage.getItem(`user_name_${user_id}`) || user_id);
   }
 }

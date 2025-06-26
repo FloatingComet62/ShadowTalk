@@ -9,16 +9,23 @@ type Channel = {
   name: string;
   members: string[]; // user ids
   pfp?: string;
+};
+type User = {
+  id: string;
+  name: string;
+  pfp?: string;
 }
 type GetChannelEventInteracter = EventInteracter<
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   {},
-  {
-    channels: Channel[];
-  },
-  {
-    message: string;
-  }
+  { channels: Channel[]; },
+  { message: string; }
+>;
+
+type UserMultiInfoEventInteracter = EventInteracter<
+  { user_ids: string[] },
+  { users: User[]; },
+  { message: string; }
 >;
 
 @Component({
@@ -67,12 +74,14 @@ type GetChannelEventInteracter = EventInteracter<
 })
 export class SidebarComponent implements OnInit, OnDestroy, OnChanges {
   private channelGet?: GetChannelEventInteracter;
+  private membersGet?: UserMultiInfoEventInteracter;
 
   @Input({ required: true }) authenticated!: boolean;
   @Output() AddChannelClick = new EventEmitter<void>();
   @Output() ChannelClick = new EventEmitter<string>();
 
   channels: Channel[] = [];
+  members: string[] = []; // user ids of members in all channels
 
   constructor(private socketService: SocketService, private cdr: ChangeDetectorRef) {}
 
@@ -81,9 +90,22 @@ export class SidebarComponent implements OnInit, OnDestroy, OnChanges {
     this.channelGet = new EventInteracterBuilder<GetChannelEventInteracter>(this.socketService, 'channel.all')
       .onMessage((data) => {
         this.channels = data.channels;
+        this.members = this.channels
+          .flatMap(channel => channel.members)
+          .filter((id) => id != localStorage.getItem("user_id"));
+        this.membersGet?.emit({ user_ids: this.members });
         this.cdr.detectChanges();
       })
       .onError((error) => console.error('Get channel error:', error))
+      .build();
+    this.membersGet = new EventInteracterBuilder<UserMultiInfoEventInteracter>(this.socketService, 'user.multi_info')
+      .onMessage((data) => {
+        for (const item of data.users) {
+          localStorage.setItem(`user_name_${item.id}`, item.name);
+          localStorage.setItem(`user_id_${item.name}`, item.id);
+        }
+      })
+      .onError((error) => console.error('Get members multi info error:', error))
       .build();
   }
 
